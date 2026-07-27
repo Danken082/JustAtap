@@ -1,0 +1,53 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\GuestCartController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
+
+Route::view('/', 'welcome')->name('home');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.attempt');
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
+
+    Route::get('/shop', [GuestCartController::class, 'index'])->name('shop.index');
+    Route::get('/cart', [GuestCartController::class, 'showCart'])->name('cart.index');
+    Route::post('/cart/add/{product}', [GuestCartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/remove/{product}', [GuestCartController::class, 'remove'])->name('cart.remove');
+    Route::post('/checkout', [GuestCartController::class, 'checkout'])->name('cart.checkout');
+});
+
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/edit', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/links', [ProfileController::class, 'addLink'])->name('profile.links.add');
+    Route::delete('/profile/links/{link}', [ProfileController::class, 'removeLink'])->name('profile.links.remove');
+});
+
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    });
+
+Route::get('/p/{cardId}', [ProfileController::class, 'showPublic'])->name('profile.public');
