@@ -228,14 +228,14 @@
             margin-right: 0;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 430px) {
             body {
-                padding: 10px;
+                padding: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-right, 0px) + 10px) calc(env(safe-area-inset-bottom, 0px) + 16px) calc(env(safe-area-inset-left, 0px) + 10px);
             }
 
             .card-shell {
-                width: min(100%, 340px);
-                border-radius: 14px;
+                width: min(100%, 360px);
+                border-radius: 20px;
             }
 
             .cover {
@@ -246,6 +246,7 @@
                 width: calc(100% - 18px);
                 margin-top: -42px;
                 padding: 12px 10px 10px;
+                border-radius: 16px;
             }
 
             .identity-name {

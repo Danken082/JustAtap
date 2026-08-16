@@ -533,15 +533,15 @@
             }
         }
 
-        @media (max-width: 560px) {
+        @media (max-width: 430px) {
             .wrap {
-                width: min(94%, 100%);
-                padding-top: 18px;
+                width: min(100%, 390px);
+                padding: calc(env(safe-area-inset-top, 0px) + 14px) 10px calc(env(safe-area-inset-bottom, 0px) + 24px);
             }
 
             .panel {
                 padding: 14px;
-                border-radius: 12px;
+                border-radius: 18px;
             }
 
             .head {
@@ -549,11 +549,12 @@
             }
 
             h1 {
-                font-size: 1.7rem;
+                font-size: 1.8rem;
             }
 
             .preview {
                 width: 100%;
+                border-radius: 20px;
             }
 
             .preview-cover {
@@ -566,10 +567,20 @@
 
             .actions {
                 flex-direction: column;
+                gap: 10px;
             }
 
             .actions button {
                 width: 100%;
+                min-height: 46px;
+                border-radius: 14px;
+            }
+
+            input,
+            select,
+            textarea {
+                min-height: 46px;
+                border-radius: 12px;
             }
         }
     </style>

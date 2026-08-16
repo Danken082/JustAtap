@@ -156,19 +156,41 @@
             font-size: 0.9rem;
         }
 
-        @media (max-width: 560px) {
+        @media (max-width: 430px) {
             body {
-                padding: 16px;
+                padding: calc(env(safe-area-inset-top, 0px) + 14px) calc(env(safe-area-inset-right, 0px) + 12px) calc(env(safe-area-inset-bottom, 0px) + 18px) calc(env(safe-area-inset-left, 0px) + 12px);
             }
 
             .register-card {
-                padding: 20px 16px;
-                border-radius: 18px;
+                width: min(100%, 390px);
+                padding: 20px 16px 18px;
+                border-radius: 24px;
             }
 
             .brand {
                 letter-spacing: 0.08em;
-                font-size: 0.76rem;
+                font-size: 0.72rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .subtitle {
+                font-size: 0.88rem;
+            }
+
+            input[type="text"],
+            input[type="email"],
+            input[type="password"] {
+                min-height: 48px;
+                border-radius: 14px;
+            }
+
+            .btn {
+                min-height: 48px;
+                border-radius: 16px;
+                font-size: 0.96rem;
             }
         }
     </style>
