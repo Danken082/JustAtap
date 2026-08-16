@@ -14,14 +14,24 @@ class UserProfile extends Model
     protected $fillable = [
         'user_id',
         'display_name',
+        'display_name_font_size',
+        'layout_style',
         'title',
         'bio',
         'avatar_url',
+        'avatar_offset_x',
+        'avatar_offset_y',
+        'logo_url',
+        'badge_images',
         'background_color',
         'text_color',
         'accent_color',
         'card_style',
         'background_pattern',
+    ];
+
+    protected $casts = [
+        'badge_images' => 'array',
     ];
 
     public function user(): BelongsTo

@@ -183,6 +183,8 @@
         <header class="top">
             <h1>Admin Dashboard</h1>
             <div>
+                <a href="{{ route('admin.cards.index') }}">Card Studio</a>
+                <span>|</span>
                 <a href="{{ route('home') }}">Home</a>
                 <span>|</span>
                 <a href="{{ route('shop.index') }}">Shop</a>
@@ -218,6 +220,7 @@
                             <th>Email</th>
                             <th>Card ID</th>
                             <th>Profile</th>
+                            <th>Action</th>
                             <th>Registered</th>
                         </tr>
                     </thead>
@@ -234,11 +237,14 @@
                                         <span class="muted">No profile yet</span>
                                     @endif
                                 </td>
+                                <td>
+                                    <a href="{{ route('admin.cards.index', ['user_id' => $user->id]) }}" style="color:#ffd6b5; font-weight:700; text-decoration:none;">Edit Card</a>
+                                </td>
                                 <td>{{ $user->created_at?->format('Y-m-d H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="muted">No users available.</td>
+                                <td colspan="6" class="muted">No users available.</td>
                             </tr>
                         @endforelse
                     </tbody>

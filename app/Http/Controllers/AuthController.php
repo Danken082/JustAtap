@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cards;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,11 +21,20 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'card_id' => ['required', 'string', 'max:255', 'unique:users,card_id'],
+            'card_id' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:users,card_id',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! Cards::where('card_number', $value)->exists()) {
+                        $fail('ID number doesn\'t exist.');
+                    }
+                },
+            ],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
-
 
         $user = User::create([
             'name' => $validated['name'],

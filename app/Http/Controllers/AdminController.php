@@ -13,7 +13,7 @@ class AdminController extends Controller
     public function dashboard(): View
     {
         $users = User::with('profile')
-            ->withCount('profile')
+            // ->withCount('profile')
             ->latest()
             ->get();
 

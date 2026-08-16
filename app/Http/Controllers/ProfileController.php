@@ -96,6 +96,8 @@ class ProfileController extends Controller
     {
         return $user->profile()->firstOrCreate([], [
             'display_name' => $user->name,
+            'display_name_font_size' => '24',
+            'layout_style' => 'classic_card',
             'title' => 'Digital Profile',
             'bio' => 'Edit your profile from the dashboard.',
             'background_color' => '#111827',
@@ -103,19 +105,20 @@ class ProfileController extends Controller
             'accent_color' => '#60a5fa',
             'card_style' => 'glass',
             'background_pattern' => 'gradient',
+            'badge_images' => [],
         ]);
     }
 
-    private function storagePathFromAvatarUrl(?string $avatarUrl): ?string
+    private function storagePathFromPublicUrl(?string $mediaUrl): ?string
     {
-        if ($avatarUrl === null || $avatarUrl === '') {
+        if ($mediaUrl === null || $mediaUrl === '') {
             return null;
         }
 
-        $path = parse_url($avatarUrl, PHP_URL_PATH);
+        $path = parse_url($mediaUrl, PHP_URL_PATH);
 
         if (! is_string($path) || $path === '') {
-            $path = $avatarUrl;
+            $path = $mediaUrl;
         }
 
         if (! str_starts_with($path, '/storage/')) {
@@ -125,13 +128,59 @@ class ProfileController extends Controller
         return ltrim(substr($path, strlen('/storage/')), '/');
     }
 
-    private function deleteStoredAvatarIfExists(?string $avatarUrl): void
+    private function deleteStoredMediaIfExists(?string $mediaUrl): void
     {
-        $storagePath = $this->storagePathFromAvatarUrl($avatarUrl);
+        $storagePath = $this->storagePathFromPublicUrl($mediaUrl);
 
         if ($storagePath !== null && Storage::disk('public')->exists($storagePath)) {
             Storage::disk('public')->delete($storagePath);
         }
+    }
+
+    private function normalizeBadgeImages(mixed $badgeImages): array
+    {
+        if (is_array($badgeImages)) {
+            $items = $badgeImages;
+        } else {
+            $items = preg_split('/\r\n|\r|\n|,/', (string) $badgeImages) ?: [];
+        }
+
+        $items = array_values(array_filter(array_map(static fn ($item) => trim((string) $item), $items), static fn ($item) => $item !== ''));
+
+        return array_slice($items, 0, 10);
+    }
+
+    private function saveBadgeImages(Request $request): array
+    {
+        $storedPaths = [];
+
+        if ($request->hasFile('badge_images')) {
+            foreach ($request->file('badge_images') as $badgeFile) {
+                if ($badgeFile === null || ! $badgeFile->isValid()) {
+                    continue;
+                }
+
+                $storedPath = $badgeFile->store('profile-badges', 'public');
+                $storedPaths[] = Storage::url($storedPath);
+            }
+        }
+
+        $existingBadgeImages = [];
+        $existingRaw = $request->input('existing_badge_images');
+
+        if (is_string($existingRaw) && trim($existingRaw) !== '') {
+            $decoded = json_decode($existingRaw, true);
+
+            if (is_array($decoded)) {
+                $existingBadgeImages = $this->normalizeBadgeImages($decoded);
+            } else {
+                $existingBadgeImages = $this->normalizeBadgeImages($existingRaw);
+            }
+        }
+
+        $merged = array_values(array_filter(array_merge($existingBadgeImages, $storedPaths), static fn ($item) => is_string($item) && trim($item) !== ''));
+
+        return array_slice($merged, 0, 10);
     }
 
     public function edit(Request $request): View
@@ -150,30 +199,56 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'display_name' => ['required', 'string', 'max:255'],
+            'display_name_font_size' => ['nullable', 'string', 'max:10'],
+            'layout_style' => ['nullable', 'in:classic_card,wave_split,soft_fade,hihello_card'],
             'title' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:500'],
-            'avatar_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
-            'avatar_url' => ['nullable', 'url', 'max:255'],
+            'avatar_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,mp4,mov,m4v,webm,avi', 'max:4096'],
+            'logo_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'badge_images' => ['nullable'],
             'remove_avatar' => ['nullable', 'boolean'],
+            'remove_logo' => ['nullable', 'boolean'],
             'background_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'text_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'accent_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'card_style' => ['required', 'in:glass,clean,bold'],
             'background_pattern' => ['required', 'in:gradient,dots,solid'],
+            'avatar_offset_x' => ['nullable', 'numeric', 'between:-200,200'],
+            'avatar_offset_y' => ['nullable', 'numeric', 'between:-200,200'],
         ]);
 
         $profile = $this->profileForUser($request->user());
-        $profileData = collect($validated)->except(['avatar_image', 'remove_avatar'])->all();
+        $profileData = collect($validated)->except(['avatar_image', 'remove_avatar', 'logo_image', 'remove_logo'])->all();
+        $profileData['avatar_url'] = $profile->avatar_url;
+        $profileData['logo_url'] = $profile->logo_url;
+        $profileData['badge_images'] = $this->saveBadgeImages($request);
+        $profileData['avatar_offset_x'] = (int) round((float) ($validated['avatar_offset_x'] ?? $profile->avatar_offset_x ?? 0));
+        $profileData['avatar_offset_y'] = (int) round((float) ($validated['avatar_offset_y'] ?? $profile->avatar_offset_y ?? 0));
 
         if ($request->boolean('remove_avatar')) {
-            $this->deleteStoredAvatarIfExists($profile->avatar_url);
+            $this->deleteStoredMediaIfExists($profile->avatar_url);
             $profileData['avatar_url'] = null;
+            $profileData['avatar_offset_x'] = 0;
+            $profileData['avatar_offset_y'] = 0;
         }
 
         if ($request->hasFile('avatar_image')) {
-            $this->deleteStoredAvatarIfExists($profile->avatar_url);
+            $this->deleteStoredMediaIfExists($profile->avatar_url);
             $storedPath = $request->file('avatar_image')->store('profile-avatars', 'public');
             $profileData['avatar_url'] = Storage::url($storedPath);
+            $profileData['avatar_offset_x'] = (int) ($validated['avatar_offset_x'] ?? 0);
+            $profileData['avatar_offset_y'] = (int) ($validated['avatar_offset_y'] ?? 0);
+        }
+
+        if ($request->boolean('remove_logo')) {
+            $this->deleteStoredMediaIfExists($profile->logo_url);
+            $profileData['logo_url'] = null;
+        }
+
+        if ($request->hasFile('logo_image')) {
+            $this->deleteStoredMediaIfExists($profile->logo_url);
+            $storedPath = $request->file('logo_image')->store('profile-logos', 'public');
+            $profileData['logo_url'] = Storage::url($storedPath);
         }
 
         $profile->update($profileData);
@@ -229,5 +304,67 @@ class ProfileController extends Controller
             'profile' => $profile,
             'linkTypes' => $this->linkTypes(),
         ]);
+    }
+
+    public function updateUserProfile(Request $request, User $user): RedirectResponse
+    {
+        $profile = $this->profileForUser($user);
+
+        $validated = $request->validate([
+            'display_name' => ['required', 'string', 'max:255'],
+            'display_name_font_size' => ['nullable', 'string', 'max:10'],
+            'layout_style' => ['nullable', 'in:classic_card,wave_split,soft_fade,hihello_card'],
+            'title' => ['nullable', 'string', 'max:255'],
+            'bio' => ['nullable', 'string', 'max:500'],
+            'avatar_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'logo_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'badge_images' => ['nullable'],
+            'remove_avatar' => ['nullable', 'boolean'],
+            'remove_logo' => ['nullable', 'boolean'],
+            'background_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'text_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'accent_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'card_style' => ['required', 'in:glass,clean,bold'],
+            'background_pattern' => ['required', 'in:gradient,dots,solid'],
+            'avatar_offset_x' => ['nullable', 'numeric', 'between:-200,200'],
+            'avatar_offset_y' => ['nullable', 'numeric', 'between:-200,200'],
+        ]);
+
+        $profileData = collect($validated)->except(['avatar_image', 'remove_avatar', 'logo_image', 'remove_logo', 'badge_images'])->all();
+        $profileData['avatar_url'] = $profile->avatar_url;
+        $profileData['logo_url'] = $profile->logo_url;
+        $profileData['badge_images'] = $this->saveBadgeImages($request);
+        $profileData['avatar_offset_x'] = (int) ($validated['avatar_offset_x'] ?? $profile->avatar_offset_x ?? 0);
+        $profileData['avatar_offset_y'] = (int) ($validated['avatar_offset_y'] ?? $profile->avatar_offset_y ?? 0);
+
+        if ($request->boolean('remove_avatar')) {
+            $this->deleteStoredMediaIfExists($profile->avatar_url);
+            $profileData['avatar_url'] = null;
+            $profileData['avatar_offset_x'] = 0;
+            $profileData['avatar_offset_y'] = 0;
+        }
+
+        if ($request->hasFile('avatar_image')) {
+            $this->deleteStoredMediaIfExists($profile->avatar_url);
+            $storedPath = $request->file('avatar_image')->store('profile-avatars', 'public');
+            $profileData['avatar_url'] = Storage::url($storedPath);
+            $profileData['avatar_offset_x'] = (int) ($validated['avatar_offset_x'] ?? 0);
+            $profileData['avatar_offset_y'] = (int) ($validated['avatar_offset_y'] ?? 0);
+        }
+
+        if ($request->boolean('remove_logo')) {
+            $this->deleteStoredMediaIfExists($profile->logo_url);
+            $profileData['logo_url'] = null;
+        }
+
+        if ($request->hasFile('logo_image')) {
+            $this->deleteStoredMediaIfExists($profile->logo_url);
+            $storedPath = $request->file('logo_image')->store('profile-logos', 'public');
+            $profileData['logo_url'] = Storage::url($storedPath);
+        }
+
+        $profile->update($profileData);
+
+        return back()->with('status', "Profile for {$user->name} updated.");
     }
 }

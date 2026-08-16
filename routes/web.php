@@ -5,7 +5,9 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GuestCartController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CardGenerationController;
 
+Route::resource('cards', CardGenerationController::class);
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -48,6 +50,10 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/cards', [CardGenerationController::class, 'index'])->name('cards.index');
+        Route::post('/cards/generate', [CardGenerationController::class, 'generate'])->name('cards.generate');
+        Route::put('/cards/{card}', [CardGenerationController::class, 'update'])->name('cards.update');
+        Route::post('/users/{user}/profile', [CardGenerationController::class, 'updateUserProfile'])->name('users.profile.update');
     });
 
 Route::get('/p/{cardId}', [ProfileController::class, 'showPublic'])->name('profile.public');
