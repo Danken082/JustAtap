@@ -228,6 +228,41 @@
             margin-right: 0;
         }
 
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .card-shell {
+                width: min(100%, 340px);
+                border-radius: 14px;
+            }
+
+            .cover {
+                height: 220px;
+            }
+
+            .identity {
+                width: calc(100% - 18px);
+                margin-top: -42px;
+                padding: 12px 10px 10px;
+            }
+
+            .identity-name {
+                font-size: clamp(1.4rem, 6vw, 2rem);
+            }
+
+            .links {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+
+            .link-item {
+                gap: 8px;
+                padding: 10px 6px;
+            }
+        }
+
         .identity-copy {
             min-width: 0;
         }

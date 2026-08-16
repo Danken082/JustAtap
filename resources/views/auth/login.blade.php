@@ -169,6 +169,28 @@
             color: #ffd7d7;
             font-size: 0.9rem;
         }
+
+        @media (max-width: 560px) {
+            body {
+                padding: 16px;
+            }
+
+            .login-card {
+                padding: 20px 16px;
+                border-radius: 18px;
+            }
+
+            .brand {
+                letter-spacing: 0.08em;
+                font-size: 0.76rem;
+            }
+
+            .meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body>

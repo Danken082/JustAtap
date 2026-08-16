@@ -506,8 +506,18 @@
         }
 
         @media (max-width: 980px) {
+            .wrap {
+                width: min(96%, 720px);
+            }
+
             .grid {
                 grid-template-columns: 1fr;
+            }
+
+            .head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
 
             .fields,
@@ -520,6 +530,46 @@
             .scan-grid img {
                 width: 170px;
                 height: 170px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .wrap {
+                width: min(94%, 100%);
+                padding-top: 18px;
+            }
+
+            .panel {
+                padding: 14px;
+                border-radius: 12px;
+            }
+
+            .head {
+                margin-bottom: 12px;
+            }
+
+            h1 {
+                font-size: 1.7rem;
+            }
+
+            .preview {
+                width: 100%;
+            }
+
+            .preview-cover {
+                height: 180px;
+            }
+
+            .preview-badges {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .actions button {
+                width: 100%;
             }
         }
     </style>

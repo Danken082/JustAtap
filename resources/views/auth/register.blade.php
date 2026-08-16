@@ -155,6 +155,22 @@
             color: #ffd7d7;
             font-size: 0.9rem;
         }
+
+        @media (max-width: 560px) {
+            body {
+                padding: 16px;
+            }
+
+            .register-card {
+                padding: 20px 16px;
+                border-radius: 18px;
+            }
+
+            .brand {
+                letter-spacing: 0.08em;
+                font-size: 0.76rem;
+            }
+        }
     </style>
 </head>
 <body>
