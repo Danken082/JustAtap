@@ -1,4 +1,4 @@
-FROM php:8.3.25-fpm-bookworm
+FROM php:8.3-fpm-bookworm
 
 WORKDIR /var/www
 
@@ -13,9 +13,8 @@ RUN apt-get update \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
-    && docker-php-ext-configure gd \
-    --with-freetype \
-    --with-jpeg \
+    libonig-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
     pdo \
     pdo_pgsql \
@@ -34,18 +33,22 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY . .
 
 RUN composer install \
+    --no-interaction \
+    --prefer-dist \
+    --no-progress \
     --no-dev \
-    --optimize-autoloader \
-    --no-interaction
+    --optimize-autoloader
 
 RUN mkdir -p storage/framework/cache \
     storage/framework/sessions \
     storage/framework/views \
-    storage/logs
+    storage/logs \
+    public/build
 
 RUN chown -R www-data:www-data \
     /var/www/storage \
-    /var/www/bootstrap/cache
+    /var/www/bootstrap/cache \
+    /var/www/public/build
 
 COPY docker/nginx.conf /etc/nginx/sites-available/default
 
