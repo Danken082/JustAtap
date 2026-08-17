@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\GuestCheckoutSummaryMail;
-use App\Support\ProductCatalog;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -19,7 +19,11 @@ class GuestCartController extends Controller
      */
     private function products(): array
     {
-        return ProductCatalog::all();
+        return Product::with(['colors', 'sizes', 'images'])
+            ->where('is_active', true)
+            ->get()
+            ->mapWithKeys(fn (Product $product) => [(string) $product->id => $product->toCatalogArray()])
+            ->all();
     }
 
     private function buildVariantKey(string $productId, string $color, string $size): string

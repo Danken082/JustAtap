@@ -36,6 +36,26 @@
             padding: 18px 0 38px;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(36px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            will-change: opacity, transform;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+
         .top-nav {
             background: #0b0d13;
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -354,7 +374,7 @@
             }
         }
 
-        @media (max-width: 720px) {
+        @media (max-width: 430px) {
             .shell {
                 width: min(1500px, 93%);
             }
@@ -383,7 +403,7 @@
     @php($guestCartCount = array_sum(session('guest_cart', [])))
 
     <div class="shell">
-        <nav class="top-nav">
+        <nav class="top-nav reveal reveal-delay-1">
             <a href="{{ route('home') }}" class="brand" aria-label="Smart Tap home">
                 <span class="brand-mark">JAT</span>
                 <span class="brand-name">Just A Tap</span>
@@ -446,7 +466,7 @@
             <p class="flash">{{ session('status') }}</p>
         @endif
 
-        <section class="hero">
+        <section class="hero reveal reveal-delay-2">
             <video class="hero-video" autoplay muted loop playsinline>
         <source src="https://smarttap.au/cdn/shop/videos/c/vp/6610f314738b4b1c8dcbc6e42f42bb79/6610f314738b4b1c8dcbc6e42f42bb79.HD-720p-4.5Mbps-42023443.mp4?v=0" type="video/mp4">
     </video>
@@ -461,68 +481,54 @@
             <a class="cta" href="#">Explore Now <span aria-hidden="true">&rarr;</span></a>
         </section>
 
-        <section class="products" aria-label="Our products">
+        <section class="products reveal reveal-delay-3" aria-label="Our products">
             <h2>Our Products</h2>
 
             <div class="product-grid">
-                <article class="product-card" style="background-image: url('https://images.unsplash.com/photo-1536924940846-227afb31e2a5?auto=format&fit=crop&w=900&q=80');">
-                    <div class="product-copy">
-                        <div class="product-left">
-                            <h3>Smart Tags</h3>
-                            <p>Smart NFC, anywhere.</p>
+                @forelse ($homeProducts as $index => $product)
+                    <article class="product-card reveal reveal-delay-{{ ($index % 3) + 1 }}" style="background-image: url('{{ $product['image'] }}');">
+                        <div class="product-copy">
+                            <div class="product-left">
+                                <h3>{{ $product['name'] }}</h3>
+                                <p>{{ \Illuminate\Support\Str::limit($product['description'], 60) }}</p>
 
-                            @guest
-                                <form method="POST" action="{{ route('cart.add', ['product' => 'smart-tag']) }}" class="add-form">
-                                    @csrf
-                                    <button type="submit" class="add-btn">Add to Cart</button>
-                                </form>
-                            @else
-                                <a href="{{ route('shop.index') }}" class="shop-link">Guest shop</a>
-                            @endguest
+                                @guest
+                                    <form method="POST" action="{{ route('cart.add', ['product' => $product['id']]) }}" class="add-form">
+                                        @csrf
+                                        <input type="hidden" name="color" value="{{ $product['colors'][0] }}">
+                                        <input type="hidden" name="size" value="{{ $product['sizes'][0] }}">
+                                        <button type="submit" class="add-btn">Add to Cart</button>
+                                    </form>
+                                @else
+                                    <a href="{{ route('shop.index') }}" class="shop-link">Guest shop</a>
+                                @endguest
+                            </div>
+                            <a class="product-arrow" href="{{ route('shop.index') }}" aria-label="Go to guest shop">&rarr;</a>
                         </div>
-                        <a class="product-arrow" href="{{ route('shop.index') }}" aria-label="Go to guest shop">&rarr;</a>
-                    </div>
-                </article>
-
-                <article class="product-card" style="background-image: url('https://images.unsplash.com/photo-1620756475382-c961d996f4d5?auto=format&fit=crop&w=900&q=80');">
-                    <div class="product-copy">
-                        <div class="product-left">
-                            <h3>Smart Cards</h3>
-                            <p>Tap. Connect. Impress.</p>
-
-                            @guest
-                                <form method="POST" action="{{ route('cart.add', ['product' => 'smart-card']) }}" class="add-form">
-                                    @csrf
-                                    <button type="submit" class="add-btn">Add to Cart</button>
-                                </form>
-                            @else
-                                <a href="{{ route('shop.index') }}" class="shop-link">Guest shop</a>
-                            @endguest
-                        </div>
-                        <a class="product-arrow" href="{{ route('shop.index') }}" aria-label="Go to guest shop">&rarr;</a>
-                    </div>
-                </article>
-
-                <article class="product-card" style="background-image: url('https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=900&q=80');">
-                    <div class="product-copy">
-                        <div class="product-left">
-                            <h3>Accessories</h3>
-                            <p>Enhance your tap.</p>
-
-                            @guest
-                                <form method="POST" action="{{ route('cart.add', ['product' => 'smart-accessory']) }}" class="add-form">
-                                    @csrf
-                                    <button type="submit" class="add-btn">Add to Cart</button>
-                                </form>
-                            @else
-                                <a href="{{ route('shop.index') }}" class="shop-link">Guest shop</a>
-                            @endguest
-                        </div>
-                        <a class="product-arrow" href="{{ route('shop.index') }}" aria-label="Go to guest shop">&rarr;</a>
-                    </div>
-                </article>
+                    </article>
+                @empty
+                    <p class="muted">No products available yet.</p>
+                @endforelse
             </div>
         </section>
     </div>
+
+    <script>
+        const revealItems = document.querySelectorAll('.reveal');
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.15,
+            rootMargin: '0px 0px -30px 0px'
+        });
+
+        revealItems.forEach((item) => revealObserver.observe(item));
+    </script>
 </body>
 </html>

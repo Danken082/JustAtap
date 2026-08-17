@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\GuestCartController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CardGenerationController;
 
@@ -19,7 +21,16 @@ Route::resource('cards', CardGenerationController::class);
 |
 */
 
-Route::view('/', 'welcome')->name('home');
+Route::get('/', function () {
+    $homeProducts = Product::with(['colors', 'sizes', 'images'])
+        ->where('is_active', true)
+        ->latest()
+        ->take(3)
+        ->get()
+        ->map(fn (Product $product) => $product->toCatalogArray());
+
+    return view('welcome', ['homeProducts' => $homeProducts]);
+})->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -54,6 +65,8 @@ Route::middleware(['auth', 'admin'])
         Route::post('/cards/generate', [CardGenerationController::class, 'generate'])->name('cards.generate');
         Route::put('/cards/{card}', [CardGenerationController::class, 'update'])->name('cards.update');
         Route::post('/users/{user}/profile', [CardGenerationController::class, 'updateUserProfile'])->name('users.profile.update');
+
+        Route::resource('products', ProductController::class)->except(['show']);
     });
 
 Route::get('/p/{cardId}', [ProfileController::class, 'showPublic'])->name('profile.public');

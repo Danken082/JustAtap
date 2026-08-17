@@ -425,12 +425,24 @@
         let activeProduct = null;
         let activeSlideIndex = 0;
 
+        function currentSlides() {
+            if (!activeProduct) {
+                return [];
+            }
+
+            const colorImages = activeProduct.color_images || {};
+            const selectedColor = modalColor.value;
+            const colorSlides = colorImages[selectedColor] || [];
+
+            return colorSlides.length > 0 ? colorSlides : (activeProduct.slides || []);
+        }
+
         function renderSlide() {
             if (!activeProduct) {
                 return;
             }
 
-            const slides = activeProduct.slides || [];
+            const slides = currentSlides();
 
             if (slides.length === 0) {
                 slideImage.src = activeProduct.image || '';
@@ -482,6 +494,11 @@
             modal.setAttribute('aria-hidden', 'false');
         }
 
+        modalColor.addEventListener('change', () => {
+            activeSlideIndex = 0;
+            renderSlide();
+        });
+
         function closeModal() {
             modal.classList.remove('is-open');
             modal.setAttribute('aria-hidden', 'true');
@@ -517,11 +534,7 @@
         });
 
         slidePrev.addEventListener('click', () => {
-            if (!activeProduct) {
-                return;
-            }
-
-            const slides = activeProduct.slides || [];
+            const slides = currentSlides();
 
             if (slides.length === 0) {
                 return;
@@ -532,11 +545,7 @@
         });
 
         slideNext.addEventListener('click', () => {
-            if (!activeProduct) {
-                return;
-            }
-
-            const slides = activeProduct.slides || [];
+            const slides = currentSlides();
 
             if (slides.length === 0) {
                 return;

@@ -185,6 +185,8 @@
             <div>
                 <a href="{{ route('admin.cards.index') }}">Card Studio</a>
                 <span>|</span>
+                <a href="{{ route('admin.products.index') }}">Products</a>
+                <span>|</span>
                 <a href="{{ route('home') }}">Home</a>
                 <span>|</span>
                 <a href="{{ route('shop.index') }}">Shop</a>
@@ -314,19 +316,27 @@
         </section>
 
         <section class="panel" style="margin-top:12px;">
-            <h2>Product Catalog</h2>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+                <h2>Product Catalog</h2>
+                <a href="{{ route('admin.products.create') }}" style="color:#ffd6b5; font-weight:700; text-decoration:none;">+ Add Product</a>
+            </div>
             <div class="products">
-                @foreach ($products as $product)
+                @forelse ($products as $product)
                     <article class="product">
-                        <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}">
+                        @if ($product['image'])
+                            <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}">
+                        @endif
                         <div class="meta">
                             <h3>{{ $product['name'] }}</h3>
                             <p>{{ $product['category'] }} | PHP {{ number_format($product['price'], 2) }}</p>
                             <p>{{ implode(', ', $product['colors']) }}</p>
                             <p>{{ implode(', ', $product['sizes']) }}</p>
+                            <p><a href="{{ route('admin.products.edit', $product['id']) }}" style="color:#ffd6b5;">Edit</a></p>
                         </div>
                     </article>
-                @endforeach
+                @empty
+                    <p class="muted">No products yet. <a href="{{ route('admin.products.create') }}" style="color:#ffd6b5;">Add your first product</a>.</p>
+                @endforelse
             </div>
         </section>
     </main>
