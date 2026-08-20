@@ -154,9 +154,9 @@
                                 {{ $item['name'] }}
                                 <div style="font-size:0.8rem;color:#c7d0e8;">Color: {{ $item['color'] }} | Size: {{ $item['size'] }}</div>
                             </td>
-                            <td class="right">AUD ₱{{ number_format($item['price'], 2) }}</td>
+                            <td class="right"> ₱ {{ number_format($item['price'], 2) }}</td>
                             <td class="right">{{ $item['quantity'] }}</td>
-                            <td class="right">AUD ₱{{ number_format($item['line_total'], 2) }}</td>
+                            <td class="right"> ₱ {{ number_format($item['line_total'], 2) }}</td>
                             <td class="right">
                                 <form method="POST" action="{{ route('cart.remove', ['product' => $item['id']]) }}">
                                     @csrf
@@ -169,15 +169,23 @@
                     @endforeach
                     <tr class="total-row">
                         <td colspan="3" class="right">Total</td>
-                        <td class="right">AUD ₱{{ number_format($total, 2) }}</td>
+                        <td class="right"> ₱ {{ number_format($total, 2) }}</td>
                         <td></td>
                     </tr>
                 </tbody>
             </table>
 
-            <div class="checkout-area">
-                <form method="POST" action="{{ route('cart.checkout') }}">
+            <div class="checkout-area" style="display:block; margin-top: 14px;">
+                <form method="POST" action="{{ route('cart.checkout') }}" style="display:flex; flex-direction:column; gap:12px; min-width: 320px;">
                     @csrf
+                    <label style="display:flex; flex-direction:column; gap:6px; text-align:left; color:#dfe6ff; font-weight:600;">
+                        Your name
+                        <input type="text" name="customer_name" value="{{ old('customer_name') }}" placeholder="Jane Customer" required style="padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0f172a; color: #fff;">
+                    </label>
+                    <label style="display:flex; flex-direction:column; gap:6px; text-align:left; color:#dfe6ff; font-weight:600;">
+                        Your email
+                        <input type="email" name="customer_email" value="{{ old('customer_email') }}" placeholder="jane@example.com" required style="padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: #0f172a; color: #fff;">
+                    </label>
                     <button type="submit" class="checkout-btn">Checkout</button>
                 </form>
             </div>

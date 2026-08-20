@@ -6,7 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class GuestCheckoutSummaryMail extends Mailable
+class GuestOrderReceiptMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -16,15 +16,16 @@ class GuestCheckoutSummaryMail extends Mailable
     public function __construct(
         public array $items,
         public float $total,
-        public string $orderedBy,
-        public string $orderedByEmail,
+        public string $customerName,
+        public string $customerEmail,
     ) {
     }
 
     public function build(): self
     {
         return $this
-            ->subject('New guest order from '.$this->orderedBy)
-            ->view('emails.guest-checkout-summary');
+            ->to($this->customerEmail, $this->customerName)
+            ->subject('Your order receipt from JustAtap')
+            ->view('emails.guest-order-receipt');
     }
 }

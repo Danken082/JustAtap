@@ -214,12 +214,39 @@ class GuestCartController extends Controller
             return back()->withErrors(['cart' => 'Your cart is empty.']);
         }
 
-        Mail::to('rontaledankeneth@gmail.com')->send(
-            new GuestCheckoutSummaryMail($summary['items'], $summary['total'])
-        );
+        $validated = $request->validate([
+            'customer_name' => ['required', 'string', 'min:2'],
+            'customer_email' => ['required', 'email'],
+        ]);
+
+        $customerName = trim((string) $validated['customer_name']);
+        $customerEmail = trim((string) $validated['customer_email']);
+        $adminEmails = config('app.admin_emails');
+
+        if (empty($adminEmails)) {
+            $adminEmails = [config('mail.from.address', env('MAIL_FROM_ADDRESS', 'hello@example.com'))];
+        }
+
+        try {
+            Mail::to($customerEmail, $customerName)->send(
+                new \App\Mail\GuestOrderReceiptMail($summary['items'], $summary['total'], $customerName, $customerEmail)
+            );
+
+            foreach ($adminEmails as $adminEmail) {
+                Mail::to($adminEmail)->send(
+                    new GuestCheckoutSummaryMail($summary['items'], $summary['total'], $customerName, $customerEmail)
+                );
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors(['cart' => 'Order could not be emailed right now. Please check mail settings and try again.']);
+        }
 
         $request->session()->forget(self::CART_SESSION_KEY);
 
-        return redirect()->route('cart.index')->with('status', 'Checkout submitted. Email sent to rontaledankeneth@gmail.com.');
+        return redirect()->route('cart.index')->with('status', 'Checkout submitted. Receipt sent to '.$customerEmail.' and order details sent to '.implode(', ', $adminEmails).'.');
     }
 }

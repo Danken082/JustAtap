@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\GuestCartController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CorporateCardController;
 use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CardGenerationController;
@@ -54,6 +55,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/edit', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/links', [ProfileController::class, 'addLink'])->name('profile.links.add');
     Route::delete('/profile/links/{link}', [ProfileController::class, 'removeLink'])->name('profile.links.remove');
+
+    Route::prefix('corporate/cards')->name('corporate.cards.')->group(function () {
+        Route::get('/', [CorporateCardController::class, 'index'])->name('index');
+        Route::post('/order', [CorporateCardController::class, 'order'])->name('order');
+        Route::post('/{cardId}/profile', [CorporateCardController::class, 'updateProfile'])->name('profile.update');
+    });
 });
 
 Route::middleware(['auth', 'admin'])

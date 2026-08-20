@@ -449,6 +449,9 @@
 
                 @auth
                     <a href="{{ route('profile.edit') }}" class="auth-link">Profile Builder</a>
+                    @if (auth()->user()->isCorporate())
+                        <a href="{{ route('corporate.cards.index') }}" class="auth-link">Corporate Cards</a>
+                    @endif
                     @if (auth()->user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="auth-link">Admin</a>
                     @endif

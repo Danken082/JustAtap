@@ -2,12 +2,11 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Guest Checkout Summary</title>
+    <title>Order Receipt</title>
 </head>
 <body style="font-family: Arial, sans-serif; color: #1a2333; line-height: 1.6;">
-    <h2>New Guest Order</h2>
-    <p><strong>Customer:</strong> {{ $orderedBy }} ({{ $orderedByEmail }})</p>
-    <p><strong>Order details:</strong></p>
+    <h2>Thanks for your order, {{ $customerName }}!</h2>
+    <p>Your receipt for the order placed with JustAtap is below.</p>
 
     <table cellpadding="8" cellspacing="0" border="1" style="border-collapse: collapse; width: 100%; max-width: 720px;">
         <thead style="background: #eef3ff;">
@@ -33,5 +32,8 @@
             </tr>
         </tbody>
     </table>
+
+    <p><strong>Order by:</strong> {{ $customerName }} ({{ $customerEmail }})</p>
+    <p>We will contact you soon with the order details.</p>
 </body>
 </html>

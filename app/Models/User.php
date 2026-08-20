@@ -23,6 +23,8 @@ class User extends Authenticatable
         'card_id',
         'email',
         'password',
+        'is_corporate',
+        'company_name',
     ];
 
     /**
@@ -42,6 +44,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_corporate' => 'boolean',
     ];
 
     public function profile(): HasOne
@@ -58,5 +61,10 @@ class User extends Authenticatable
         }
 
         return in_array(strtolower((string) $this->email), array_map('strtolower', $adminEmails), true);
+    }
+
+    public function isCorporate(): bool
+    {
+        return $this->is_corporate;
     }
 }
