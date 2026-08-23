@@ -294,4 +294,16 @@ class ProductController extends Controller
             'sort_order' => $sortOrder,
         ]);
     }
+
+        public function editUserProfile(Request $request, string $cardId): View
+    {
+        $user = User::where('card_id', $cardId)->firstOrFail();
+        $profile = $this->profileForUser($user)->load('links');
+
+        return view('admin.profile.edituserprofile', [
+            'user' => $user,
+            'profile' => $profile,
+            'linkTypes' => $this->linkTypes(),
+        ]);
+    }
 }

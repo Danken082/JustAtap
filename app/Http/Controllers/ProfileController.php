@@ -367,4 +367,16 @@ class ProfileController extends Controller
 
         return back()->with('status', "Profile for {$user->name} updated.");
     }
+
+    public function editUserProfile(Request $request, string $cardId): View
+    {
+        $user = User::where('card_id', $cardId)->firstOrFail();
+        $profile = $this->profileForUser($user)->load('links');
+
+        return view('admin.profile.edituserprofile', [
+            'user' => $user,
+            'profile' => $profile,
+            'linkTypes' => $this->linkTypes(),
+        ]);
+    }
 }

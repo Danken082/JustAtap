@@ -74,6 +74,8 @@ Route::middleware(['auth', 'admin'])
         Route::post('/users/{user}/profile', [CardGenerationController::class, 'updateUserProfile'])->name('users.profile.update');
 
         Route::resource('products', ProductController::class)->except(['show']);
+        Route::get('/profileedit/{cardId}', [ProfileController::class, 'editUserProfile'])->name('profile.edituserprofile');
     });
+
 
 Route::get('/p/{cardId}', [ProfileController::class, 'showPublic'])->name('profile.public');

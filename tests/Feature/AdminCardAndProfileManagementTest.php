@@ -15,6 +15,19 @@ class AdminCardAndProfileManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_public_profile_route_alias_works_for_card_id(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Jane Public',
+            'card_id' => 'ID-2026-000777',
+        ]);
+
+        $response = $this->get('/profile/'.$user->card_id);
+
+        $response->assertOk();
+        $response->assertSee('Jane Public');
+    }
+
     public function test_guest_checkout_sends_receipt_to_customer_and_order_summary_to_admin(): void
     {
         config(['app.admin_emails' => ['admin@example.com']]);
