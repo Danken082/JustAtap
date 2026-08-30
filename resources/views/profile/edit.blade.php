@@ -41,6 +41,44 @@
             font-size: clamp(1.6rem, 3.5vw, 2.2rem);
         }
 
+        .tabs-nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding-bottom: 12px;
+        }
+
+        .tab-button {
+            border: 0;
+            background: transparent;
+            color: #b4c5ff;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            color: #e6ecff;
+        }
+
+        .tab-button.is-active {
+            color: #edf2ff;
+            border-bottom-color: #4270e6;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.is-active {
+            display: block;
+        }
+
         .grid {
             display: grid;
             grid-template-columns: 1.1fr 0.9fr;
@@ -48,6 +86,12 @@
         }
 
         .right-stack {
+            display: grid;
+            gap: 14px;
+            align-content: start;
+        }
+
+        .preview-panel {
             display: grid;
             gap: 14px;
             align-content: start;
@@ -612,249 +656,382 @@
             <p class="error">{{ $errors->first() }}</p>
         @endif
 
-        <section class="grid">
-            <article class="panel">
-                <h2>Design & Info</h2>
-                <p class="small">Customize your digital profile card and virtual contact details.</p>
+        <!-- Tab Navigation -->
+        <nav class="tabs-nav">
+            @if (! $adminEditor)
+                <button class="tab-button" data-tab="personal-info">Account Settings</button>
+            @endif
+            <button class="tab-button" data-tab="design-info">Design & Info</button>
+            <button class="tab-button is-active" data-tab="profile-links">Profile Links</button>
+        </nav>
 
-                <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
-                    @csrf
-                    <div class="fields">
-                        <div>
-                            <label for="display_name">Display Name</label>
-                            <input id="display_name" type="text" name="display_name" value="{{ old('display_name', $profile->display_name ?? $user->name) }}" required>
-                        </div>
-                        <div>
-                            <label for="title">Role / Title</label>
-                            <input id="title" type="text" name="title" value="{{ old('title', $profile->title) }}">
-                        </div>
-                        <div>
-                            <label for="display_name_font_size">Display Name Font Size</label>
-                            <input id="display_name_font_size" type="number" min="14" max="40" name="display_name_font_size" value="{{ old('display_name_font_size', $profile->display_name_font_size ?? '24') }}">
-                        </div>
-                        <div>
-                            <label for="layout_style">Layout Preset</label>
-                            <select id="layout_style" name="layout_style">
-                                <option value="classic_card" @selected($layoutStyle === 'classic_card')>Classic Card</option>
-                                <option value="wave_split" @selected($layoutStyle === 'wave_split')>Wave Split</option>
-                                <option value="soft_fade" @selected($layoutStyle === 'soft_fade')>Soft Fade</option>
-                                <option value="hihello_card" @selected($layoutStyle === 'hihello_card')>HiHello Style</option>
-                            </select>
-                        </div>
-                        <div class="full">
-                            <label for="bio">Bio</label>
-                            <textarea id="bio" name="bio">{{ old('bio', $profile->bio) }}</textarea>
-                        </div>
-                        <div class="full">
-                            <input type="hidden" id="avatar_url" name="avatar_url" value="{{ $profile->avatar_url ?? '' }}">
-                            <input type="hidden" id="avatar_offset_x" name="avatar_offset_x" value="{{ $profile->avatar_offset_x ?? 0 }}">
-                            <input type="hidden" id="avatar_offset_y" name="avatar_offset_y" value="{{ $profile->avatar_offset_y ?? 0 }}">
-                            <label for="avatar_image">Profile Picture / Video Upload (optional)</label>
-                            <input id="avatar_image" type="file" name="avatar_image" accept="image/*,video/*,.mp4,.mov,.m4v,.webm,.avi">
-                            <p class="small">Accepted: JPG, PNG, WEBP, GIF, MP4, MOV, M4V, WEBM, AVI. Maximum size: 4MB for images or 20MB for video.</p>
+        <!-- Tab Content -->
+        @if (! $adminEditor)
+            <!-- Personal Info Tab -->
+            <section class="tab-pane" id="personal-info-pane" data-tab-content="personal-info">
+                <div class="grid">
+                    <div class="preview-panel">
+                        <div class="panel" style="position: sticky; top: 20px;">
+                            <h3 style="margin: 0 0 12px; font-size: 0.95rem;">Preview</h3>
+                            <div class="preview layout-{{ $layoutStyle }}">
+                                <div id="preview_cover" class="preview-cover">
+                                    <div class="preview-avatar-stage">
+                                        <img id="preview_avatar_media" class="preview-avatar-media" alt="Profile avatar preview">
+                                    </div>
+                                </div>
 
-                            <div id="avatar_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 12px;"></div>
+                                <div class="preview-identity">
+                                    <div class="preview-copy">
+                                        <h2 id="preview_display_name" class="preview-name" style="font-size: {{ $profile->display_name_font_size ?? 24 }}px;">{{ $profile->display_name ?? $user->name }}</h2>
+                                        <p id="preview_title" class="preview-title">{{ $profile->title }}</p>
+                                        <p id="preview_bio" class="preview-bio">{{ $profile->bio }}</p>
+                                    </div>
+                                    <img
+                                        id="preview_logo"
+                                        class="preview-logo @if (!($profile->logo_url)) placeholder @endif"
+                                        src="{{ $profile->logo_url ?? 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' }}"
+                                        alt="Profile logo preview"
+                                    >
+                                </div>
 
-                            @if ($profile->avatar_url)
-                                <div class="avatar-control">
-                                    @php $isAvatarVideo = preg_match('/\.(mp4|webm|mov|m4v|avi|quicktime)(\?.*)?$/i', (string) $profile->avatar_url); @endphp
-                                    @if ($isAvatarVideo)
-                                        <video controls preload="metadata" style="width:100%;max-height:220px;border-radius:10px;background:#0f172a;">
-                                            <source src="{{ $profile->avatar_url }}">
-                                        </video>
-                                    @else
-                                        <img src="{{ $profile->avatar_url }}" alt="Current profile picture">
+                                <div class="preview-links">
+                                    @forelse ($profile->links as $link)
+                                        <a class="preview-link" href="{{ $link->value }}" target="_blank" rel="noopener">
+                                            <i class="bi {{ $linkTypes[$link->type]['icon'] ?? 'bi-link-45deg' }}"></i>
+                                            <span>{{ $link->label }}</span>
+                                        </a>
+                                    @empty
+                                        <p>Add your first contact link above.</p>
+                                    @endforelse
+                                </div>
+
+                                <div class="preview-badges-wrap" id="preview_badges_wrap" @if (empty($profile->badge_images)) style="display:none;" @endif>
+                                    <p class="preview-badges-title">Achievements</p>
+                                    <div class="preview-badges" id="preview_badges">
+                                        @if (!empty($profile->badge_images))
+                                            @foreach (array_slice($profile->badge_images, 0, 10) as $badge)
+                                                <img class="preview-badge" src="{{ $badge }}" alt="Badge image">
+                                            @endforeach
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="right-stack">
+                        <article class="panel">
+                            <h2>Personal Information</h2>
+                            <p class="small">Update the name and email connected to your account.</p>
+                            <form method="POST" action="{{ route('profile.personal-info.update') }}" style="margin-bottom:20px;">
+                                @csrf
+                                <div class="fields">
+                                    <div>
+                                        <label for="account_name">Name</label>
+                                        <input id="account_name" type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                                    </div>
+                                    <div>
+                                        <label for="account_email">Email</label>
+                                        <input id="account_email" type="email" name="email" value="{{ old('email', $user->email) }}" required>
+                                    </div>
+                                </div>
+                                <div class="actions">
+                                    <button type="submit">Save Personal Information</button>
+                                </div>
+                            </form>
+                            <div style="margin-bottom:20px; padding:12px; border:1px solid rgba(114, 233, 163, 0.35); border-radius:10px; background:rgba(114, 233, 163, 0.08);">
+                                <strong>{{ number_format($profile->profile_view_count ?? 0) }}</strong>
+                                <span class="small"> live profile views</span>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+        @endif
+
+        <!-- Design & Info Tab -->
+        <section class="tab-pane" id="design-info-pane" data-tab-content="design-info">
+            <div class="grid">
+                <div class="preview-panel">
+                    <div class="panel" style="position: sticky; top: 20px;">
+                        <h3 style="margin: 0 0 12px; font-size: 0.95rem;">Preview</h3>
+                        <div class="preview layout-{{ $layoutStyle }}">
+                            <div id="preview_cover" class="preview-cover">
+                                <div class="preview-avatar-stage">
+                                    <img id="preview_avatar_media" class="preview-avatar-media" alt="Profile avatar preview">
+                                </div>
+                            </div>
+
+                            <div class="preview-identity">
+                                <div class="preview-copy">
+                                    <h2 id="preview_display_name" class="preview-name" style="font-size: {{ $profile->display_name_font_size ?? 24 }}px;">{{ $profile->display_name ?? $user->name }}</h2>
+                                    <p id="preview_title" class="preview-title">{{ $profile->title }}</p>
+                                    <p id="preview_bio" class="preview-bio">{{ $profile->bio }}</p>
+                                </div>
+                                <img
+                                    id="preview_logo"
+                                    class="preview-logo @if (!($profile->logo_url)) placeholder @endif"
+                                    src="{{ $profile->logo_url ?? 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' }}"
+                                    alt="Profile logo preview"
+                                >
+                            </div>
+
+                            <div class="preview-links">
+                                @forelse ($profile->links as $link)
+                                    <a class="preview-link" href="{{ $link->value }}" target="_blank" rel="noopener">
+                                        <i class="bi {{ $linkTypes[$link->type]['icon'] ?? 'bi-link-45deg' }}"></i>
+                                        <span>{{ $link->label }}</span>
+                                    </a>
+                                @empty
+                                    <p>Add your first contact link above.</p>
+                                @endforelse
+                            </div>
+
+                            <div class="preview-badges-wrap" id="preview_badges_wrap" @if (empty($profile->badge_images)) style="display:none;" @endif>
+                                <p class="preview-badges-title">Achievements</p>
+                                <div class="preview-badges" id="preview_badges">
+                                    @if (!empty($profile->badge_images))
+                                        @foreach (array_slice($profile->badge_images, 0, 10) as $badge)
+                                            <img class="preview-badge" src="{{ $badge }}" alt="Badge image">
+                                        @endforeach
                                     @endif
-                                    <label style="display:flex;align-items:center;gap:8px;margin:0;">
-                                        <input type="checkbox" name="remove_avatar" value="1" style="width:auto;">
-                                        Remove current profile picture
-                                    </label>
                                 </div>
-                            @endif
-                        </div>
-                        <div class="full">
-                            <input type="hidden" id="logo_url" name="logo_url" value="{{ $profile->logo_url ?? '' }}">
-                            <label for="logo_image">Logo Image Upload (optional)</label>
-                            <input id="logo_image" type="file" name="logo_image" accept="image/png,image/jpeg,image/webp,image/gif">
-                            <div id="logo_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 12px;"></div>
-
-                            @if ($profile->logo_url)
-                                <div class="avatar-control" style="margin-top:12px;">
-                                    <img src="{{ $profile->logo_url }}" alt="Current logo image">
-                                    <label style="display:flex;align-items:center;gap:8px;margin:0;">
-                                        <input type="checkbox" name="remove_logo" value="1" style="width:auto;">
-                                        Remove current logo
-                                    </label>
-                                </div>
-                            @endif
-                        </div>
-                        <div class="full">
-                            <label for="badge_images">Badge / Achievement Images (max 10)</label>
-                            <input type="hidden" name="existing_badge_images" id="existing_badge_images" value='{{ json_encode($profile->badge_images ?? []) }}'>
-                            <input id="badge_images" type="file" name="badge_images[]" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-                            <p class="small">Upload new badge images to add them to the album. Remove existing badges using the remove button below.</p>
-                            <div id="badge_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 10px; margin-top: 12px;"></div>
-                        </div>
-                        <div>
-                            <label for="background_color">Background Color</label>
-                            <input id="background_color" type="color" name="background_color" value="{{ old('background_color', $profile->background_color) }}">
-                        </div>
-                        <div>
-                            <label for="text_color">Text Color</label>
-                            <input id="text_color" type="color" name="text_color" value="{{ old('text_color', $profile->text_color) }}">
-                        </div>
-                        <div>
-                            <label for="accent_color">Accent Color</label>
-                            <input id="accent_color" type="color" name="accent_color" value="{{ old('accent_color', $profile->accent_color) }}">
-                        </div>
-                        <div>
-                            <label for="card_style">Card Style</label>
-                            <select id="card_style" name="card_style">
-                                <option value="glass" @selected(old('card_style', $profile->card_style) === 'glass')>Glass</option>
-                                <option value="clean" @selected(old('card_style', $profile->card_style) === 'clean')>Clean</option>
-                                <option value="bold" @selected(old('card_style', $profile->card_style) === 'bold')>Bold</option>
-                            </select>
-                        </div>
-                        <div class="full">
-                            <label for="background_pattern">Background Pattern</label>
-                            <select id="background_pattern" name="background_pattern">
-                                <option value="gradient" @selected(old('background_pattern', $profile->background_pattern) === 'gradient')>Gradient</option>
-                                <option value="dots" @selected(old('background_pattern', $profile->background_pattern) === 'dots')>Dots</option>
-                                <option value="solid" @selected(old('background_pattern', $profile->background_pattern) === 'solid')>Solid</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="actions">
-                        <button type="submit">Save Profile</button>
-                    </div>
-                </form>
-            </article>
-
-            <div class="right-stack">
-            <article class="panel">
-                <h2>Add Icon Links</h2>
-                <p class="small">Choose an icon first, then add your account link, number, or contact info for that icon.</p>
-
-                <form method="POST" action="{{ route('profile.links.add') }}">
-                    @csrf
-                    <input id="type" name="type" type="hidden" value="{{ $selectedType }}">
-
-                    <div class="icon-groups" aria-label="Choose icon type">
-                        @foreach ($groupedLinkTypes as $category => $types)
-                            <section class="icon-group">
-                                <p class="group-title">{{ $category }}</p>
-                                <div class="icon-grid">
-                                    @foreach ($types as $type => $meta)
-                                        <button
-                                            type="button"
-                                            class="icon-choice @if ($selectedType === $type) is-active @endif"
-                                            data-link-choice
-                                            data-type="{{ $type }}"
-                                            data-label="{{ $meta['label'] }}"
-                                            data-placeholder="{{ $meta['placeholder'] }}"
-                                        >
-                                            <i class="bi {{ $meta['icon'] }}"></i>
-                                            <span>{{ $meta['label'] }}</span>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </section>
-                        @endforeach
-                    </div>
-
-                    <div class="type-grid">
-                        <div>
-                            <label for="label">Label</label>
-                            <input id="label" name="label" type="text" value="{{ old('label') }}" placeholder="Enter Label" required>
-                        </div>
-                        <div>
-                            <label for="value">URL / Contact</label>
-                            <input id="value" name="value" type="text" value="{{ old('value') }}" placeholder="{{ $selectedTypeMeta['placeholder'] ?? 'your-link-or-contact' }}" required>
-                        </div>
-                    </div>
-                    <div class="actions">
-                        <button type="submit">Add Link</button>
-                    </div>
-                </form>
-
-                <div class="actions" style="margin-top:14px;"></div>
-
-                @foreach ($profile->links as $link)
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 10px;">
-                        <span><i class="bi {{ $linkTypes[$link->type]['icon'] ?? 'bi-link-45deg' }}"></i> {{ $link->label }}</span>
-                        <form method="POST" action="{{ route('profile.links.remove', ['link' => $link->id]) }}">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="danger">Remove</button>
-                        </form>
-                    </div>
-                @endforeach
-            </article>
-
-        <section class="panel">
-            <h2>Live Preview</h2>
-            <div class="preview layout-{{ $layoutStyle }}">
-                <div id="preview_cover" class="preview-cover">
-                    <div class="preview-avatar-stage">
-                        <img id="preview_avatar_media" class="preview-avatar-media" alt="Profile avatar preview">
-                    </div>
-                </div>
-
-                <div class="preview-identity">
-                    <div class="preview-copy">
-                        <h2 id="preview_display_name" class="preview-name" style="font-size: {{ $profile->display_name_font_size ?? 24 }}px;">{{ $profile->display_name ?? $user->name }}</h2>
-                        <p id="preview_title" class="preview-title">{{ $profile->title }}</p>
-                        <p id="preview_bio" class="preview-bio">{{ $profile->bio }}</p>
-                    </div>
-                    <img
-                        id="preview_logo"
-                        class="preview-logo @if (!($profile->logo_url)) placeholder @endif"
-                        src="{{ $profile->logo_url ?? 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' }}"
-                        alt="Profile logo preview"
-                    >
-                </div>
-
-                <div class="preview-links">
-                    @forelse ($profile->links as $link)
-                        <a class="preview-link" href="{{ $link->value }}" target="_blank" rel="noopener">
-                            <i class="bi {{ $linkTypes[$link->type]['icon'] ?? 'bi-link-45deg' }}"></i>
-                            <span>{{ $link->label }}</span>
-                        </a>
-                    @empty
-                        <p>Add your first contact link above.</p>
-                    @endforelse
-                </div>
-
-                <div class="preview-badges-wrap" id="preview_badges_wrap" @if (empty($profile->badge_images)) style="display:none;" @endif>
-                    <p class="preview-badges-title">Achievements</p>
-                    <div class="preview-badges" id="preview_badges">
-                        @if (!empty($profile->badge_images))
-                            @foreach (array_slice($profile->badge_images, 0, 10) as $badge)
-                                <img class="preview-badge" src="{{ $badge }}" alt="Badge image">
-                            @endforeach
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <div class="actions" style="margin-top: 14px; align-items: stretch;">
-                <div style="width:100%;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;">
-                    <h3 style="margin:0;">Scan Or Tap Access</h3>
-                    <p class="small" style="margin-top:6px;">This is the profile link encoded in your card. Users can scan the QR code or tap your NFC card to open your live profile instantly.</p>
-                    <div class="scan-grid">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ urlencode($publicCardUrl) }}" alt="QR code for public profile">
-                        <div>
-                            <label for="public_card_url">Public Card URL</label>
-                            <input id="public_card_url" type="text" value="{{ $publicCardUrl }}" readonly>
-                            <div class="actions">
-                                <button id="copy_card_url" type="button">Copy Card Link</button>
                             </div>
                         </div>
                     </div>
                 </div>
+                <div class="right-stack">
+                    <article class="panel">
+                        <h2>Design & Info</h2>
+                        <p class="small">Customize your digital profile card and virtual contact details.</p>
+
+                        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+                            @csrf
+                            <div class="fields">
+                                <div>
+                                    <label for="display_name">Display Name</label>
+                                    <input id="display_name" type="text" name="display_name" value="{{ old('display_name', $profile->display_name ?? $user->name) }}" required>
+                                </div>
+                                <div>
+                                    <label for="title">Role / Title</label>
+                                    <input id="title" type="text" name="title" value="{{ old('title', $profile->title) }}">
+                                </div>
+                                <div>
+                                    <label for="display_name_font_size">Display Name Font Size</label>
+                                    <input id="display_name_font_size" type="number" min="14" max="40" name="display_name_font_size" value="{{ old('display_name_font_size', $profile->display_name_font_size ?? '24') }}">
+                                </div>
+                                <div>
+                                    <label for="layout_style">Layout Preset</label>
+                                    <select id="layout_style" name="layout_style">
+                                        <option value="classic_card" @selected($layoutStyle === 'classic_card')>Classic Card</option>
+                                        <option value="wave_split" @selected($layoutStyle === 'wave_split')>Wave Split</option>
+                                        <option value="soft_fade" @selected($layoutStyle === 'soft_fade')>Soft Fade</option>
+                                        <option value="hihello_card" @selected($layoutStyle === 'hihello_card')>HiHello Style</option>
+                                    </select>
+                                </div>
+                                <div class="full">
+                                    <label for="bio">Bio</label>
+                                    <textarea id="bio" name="bio">{{ old('bio', $profile->bio) }}</textarea>
+                                </div>
+                                <div class="full">
+                                    <input type="hidden" id="avatar_url" name="avatar_url" value="{{ $profile->avatar_url ?? '' }}">
+                                    <input type="hidden" id="avatar_offset_x" name="avatar_offset_x" value="{{ $profile->avatar_offset_x ?? 0 }}">
+                                    <input type="hidden" id="avatar_offset_y" name="avatar_offset_y" value="{{ $profile->avatar_offset_y ?? 0 }}">
+                                    <label for="avatar_image">Profile Picture / Video Upload (optional)</label>
+                                    <input id="avatar_image" type="file" name="avatar_image" accept="image/*,video/*,.mp4,.mov,.m4v,.webm,.avi">
+                                    <p class="small">Accepted: JPG, PNG, WEBP, GIF, MP4, MOV, M4V, WEBM, AVI. Maximum size: 4MB for images or 20MB for video.</p>
+
+                                    <div id="avatar_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 12px;"></div>
+
+                                    @if ($profile->avatar_url)
+                                        <div class="avatar-control">
+                                            @php $isAvatarVideo = preg_match('/\.(mp4|webm|mov|m4v|avi|quicktime)(\?.*)?$/i', (string) $profile->avatar_url); @endphp
+                                            @if ($isAvatarVideo)
+                                                <video controls preload="metadata" style="width:100%;max-height:220px;border-radius:10px;background:#0f172a;">
+                                                    <source src="{{ $profile->avatar_url }}">
+                                                </video>
+                                            @else
+                                                <img src="{{ $profile->avatar_url }}" alt="Current profile picture">
+                                            @endif
+                                            <label style="display:flex;align-items:center;gap:8px;margin:0;">
+                                                <input type="checkbox" name="remove_avatar" value="1" style="width:auto;">
+                                                Remove current profile picture
+                                            </label>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="full">
+                                    <input type="hidden" id="logo_url" name="logo_url" value="{{ $profile->logo_url ?? '' }}">
+                                    <label for="logo_image">Logo Image Upload (optional)</label>
+                                    <input id="logo_image" type="file" name="logo_image" accept="image/png,image/jpeg,image/webp,image/gif">
+                                    <div id="logo_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 12px;"></div>
+
+                                    @if ($profile->logo_url)
+                                        <div class="avatar-control" style="margin-top:12px;">
+                                            <img src="{{ $profile->logo_url }}" alt="Current logo image">
+                                            <label style="display:flex;align-items:center;gap:8px;margin:0;">
+                                                <input type="checkbox" name="remove_logo" value="1" style="width:auto;">
+                                                Remove current logo
+                                            </label>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="full">
+                                    <label for="badge_images">Badge / Achievement Images (max 10)</label>
+                                    <input type="hidden" name="existing_badge_images" id="existing_badge_images" value='{{ json_encode($profile->badge_images ?? []) }}'>
+                                    <input id="badge_images" type="file" name="badge_images[]" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+                                    <p class="small">Upload new badge images to add them to the album. Remove existing badges using the remove button below.</p>
+                                    <div id="badge_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 10px; margin-top: 12px;"></div>
+                                </div>
+                                <div>
+                                    <label for="background_color">Background Color</label>
+                                    <input id="background_color" type="color" name="background_color" value="{{ old('background_color', $profile->background_color) }}">
+                                </div>
+                                <div>
+                                    <label for="text_color">Text Color</label>
+                                    <input id="text_color" type="color" name="text_color" value="{{ old('text_color', $profile->text_color) }}">
+                                </div>
+                                <div>
+                                    <label for="accent_color">Accent Color</label>
+                                    <input id="accent_color" type="color" name="accent_color" value="{{ old('accent_color', $profile->accent_color) }}">
+                                </div>
+                                <div>
+                                    <label for="card_style">Card Style</label>
+                                    <select id="card_style" name="card_style">
+                                        <option value="glass" @selected(old('card_style', $profile->card_style) === 'glass')>Glass</option>
+                                        <option value="clean" @selected(old('card_style', $profile->card_style) === 'clean')>Clean</option>
+                                        <option value="bold" @selected(old('card_style', $profile->card_style) === 'bold')>Bold</option>
+                                    </select>
+                                </div>
+                                <div class="full">
+                                    <label for="background_pattern">Background Pattern</label>
+                                    <select id="background_pattern" name="background_pattern">
+                                        <option value="gradient" @selected(old('background_pattern', $profile->background_pattern) === 'gradient')>Gradient</option>
+                                        <option value="dots" @selected(old('background_pattern', $profile->background_pattern) === 'dots')>Dots</option>
+                                        <option value="solid" @selected(old('background_pattern', $profile->background_pattern) === 'solid')>Solid</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="actions">
+                                <button type="submit">Save Profile</button>
+                            </div>
+                        </form>
+                    </article>
+                </div>
             </div>
         </section>
 
+        <!-- Profile Links Tab -->
+        <section class="tab-pane is-active" id="profile-links-pane" data-tab-content="profile-links">
+            <div class="grid">
+                <div class="preview-panel">
+                    <div class="panel" style="position: sticky; top: 20px;">
+                        <h3 style="margin: 0 0 12px; font-size: 0.95rem;">Preview</h3>
+                        <div class="preview layout-{{ $layoutStyle }}">
+                            <div id="preview_cover" class="preview-cover">
+                                <div class="preview-avatar-stage">
+                                    <img id="preview_avatar_media" class="preview-avatar-media" alt="Profile avatar preview">
+                                </div>
+                            </div>
+
+                            <div class="preview-identity">
+                                <div class="preview-copy">
+                                    <h2 id="preview_display_name" class="preview-name" style="font-size: {{ $profile->display_name_font_size ?? 24 }}px;">{{ $profile->display_name ?? $user->name }}</h2>
+                                    <p id="preview_title" class="preview-title">{{ $profile->title }}</p>
+                                    <p id="preview_bio" class="preview-bio">{{ $profile->bio }}</p>
+                                </div>
+                                <img
+                                    id="preview_logo"
+                                    class="preview-logo @if (!($profile->logo_url)) placeholder @endif"
+                                    src="{{ $profile->logo_url ?? 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' }}"
+                                    alt="Profile logo preview"
+                                >
+                            </div>
+
+                            <div class="preview-links">
+                                @forelse ($profile->links as $link)
+                                    <a class="preview-link" href="{{ $link->value }}" target="_blank" rel="noopener">
+                                        <i class="bi {{ $linkTypes[$link->type]['icon'] ?? 'bi-link-45deg' }}"></i>
+                                        <span>{{ $link->label }}</span>
+                                    </a>
+                                @empty
+                                    <p>Add your first contact link above.</p>
+                                @endforelse
+                            </div>
+
+                            <div class="preview-badges-wrap" id="preview_badges_wrap" @if (empty($profile->badge_images)) style="display:none;" @endif>
+                                <p class="preview-badges-title">Achievements</p>
+                                <div class="preview-badges" id="preview_badges">
+                                    @if (!empty($profile->badge_images))
+                                        @foreach (array_slice($profile->badge_images, 0, 10) as $badge)
+                                            <img class="preview-badge" src="{{ $badge }}" alt="Badge image">
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="right-stack">
+                    <article class="panel">
+                        <h2>Add Icon Links</h2>
+                        <p class="small">Choose an icon first, then add your account link, number, or contact info for that icon.</p>
+
+                        <form method="POST" action="{{ route('profile.links.add') }}">
+                            @csrf
+                            <input id="type" name="type" type="hidden" value="{{ $selectedType }}">
+
+                            <div class="icon-groups" aria-label="Choose icon type">
+                                @foreach ($groupedLinkTypes as $category => $types)
+                                    <section class="icon-group">
+                                        <p class="group-title">{{ $category }}</p>
+                                        <div class="icon-grid">
+                                            @foreach ($types as $type => $meta)
+                                                <button
+                                                    type="button"
+                                                    class="icon-choice @if ($selectedType === $type) is-active @endif"
+                                                    data-link-choice
+                                                    data-type="{{ $type }}"
+                                                    data-label="{{ $meta['label'] }}"
+                                                    data-placeholder="{{ $meta['placeholder'] }}"
+                                                >
+                                                    <i class="bi {{ $meta['icon'] }}"></i>
+                                                    <span>{{ $meta['label'] }}</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </section>
+                                @endforeach
+                            </div>
+
+                            <div class="type-grid">
+                                <div>
+                                    <label for="label">Label</label>
+                                    <input id="label" name="label" type="text" value="{{ old('label') }}" placeholder="Enter Label" required>
+                                </div>
+                                <div>
+                                    <label for="value">URL / Contact</label>
+                                    <input id="value" name="value" type="text" value="{{ old('value') }}" placeholder="{{ $selectedTypeMeta['placeholder'] ?? 'your-link-or-contact' }}" required>
+                                </div>
+                            </div>
+                            <div class="actions">
+                                <button type="submit">Add Link</button>
+                            </div>
+                        </form>
+
+                        <div class="actions" style="margin-top:14px;"></div>
+
+                        @foreach ($profile->links as $link)
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 10px;">
+                                <span><i class="bi {{ $linkTypes[$link->type]['icon'] ?? 'bi-link-45deg' }}"></i> {{ $link->label }}</span>
+                                <form method="POST" action="{{ route('profile.links.remove', ['link' => $link->id]) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="danger">Remove</button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </article>
+                </div>
             </div>
         </section>
     </main>
@@ -888,17 +1065,12 @@
         const cardStyleInput = document.getElementById('card_style');
         const backgroundPatternInput = document.getElementById('background_pattern');
 
-        const previewCard = document.querySelector('.preview');
-        const previewCover = document.getElementById('preview_cover');
-        const previewAvatarMedia = document.getElementById('preview_avatar_media');
-        const previewName = document.getElementById('preview_display_name');
-        const previewTitle = document.getElementById('preview_title');
-        const previewBio = document.getElementById('preview_bio');
-        const previewLogo = document.getElementById('preview_logo');
-        const previewBadgesWrap = document.getElementById('preview_badges_wrap');
-        const previewBadges = document.getElementById('preview_badges');
-
         const emptyImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+
+        // Helper function to update all preview elements
+        function updateAllPreviewElements(updateFn) {
+            document.querySelectorAll('.preview').forEach(updateFn);
+        }
 
         function setActiveIcon(choiceButton) {
             iconChoices.forEach((button) => button.classList.remove('is-active'));
@@ -946,64 +1118,69 @@
         }
 
         function setAvatarPreviewMedia(src, asVideo = false) {
-            if (!previewAvatarMedia) {
-                return;
-            }
+            updateAllPreviewElements((previewCard) => {
+                const previewCover = previewCard.querySelector('#preview_cover');
+                const previewAvatarMedia = previewCard.querySelector('#preview_avatar_media');
+                
+                if (!previewCover || !previewAvatarMedia) {
+                    return;
+                }
 
-            const existingVideo = previewCover?.querySelector('video[data-avatar-preview-video]');
-            if (existingVideo) {
-                existingVideo.remove();
-            }
+                const existingVideo = previewCover.querySelector('video[data-avatar-preview-video]');
+                if (existingVideo) {
+                    existingVideo.remove();
+                }
 
-            if (!src || src.trim() === '') {
-                previewAvatarMedia.src = '';
-                previewAvatarMedia.style.display = 'none';
+                if (!src || src.trim() === '') {
+                    previewAvatarMedia.src = '';
+                    previewAvatarMedia.style.display = 'none';
+                    const offsetX = normalizeAvatarOffset(avatarOffsetXInput?.value || 0);
+                    const offsetY = normalizeAvatarOffset(avatarOffsetYInput?.value || 0);
+                    previewAvatarMedia.style.setProperty('--avatar-x', `${offsetX}px`);
+                    previewAvatarMedia.style.setProperty('--avatar-y', `${offsetY}px`);
+                    return;
+                }
+
+                if (asVideo) {
+                    const video = document.createElement('video');
+                    video.src = src;
+                    video.muted = true;
+                    video.loop = true;
+                    video.autoplay = true;
+                    video.playsInline = true;
+                    video.controls = false;
+                    video.dataset.avatarPreviewVideo = '1';
+                    video.style.position = 'absolute';
+                    video.style.left = '50%';
+                    video.style.top = '50%';
+                    video.style.width = '120%';
+                    video.style.height = '120%';
+                    video.style.objectFit = 'cover';
+                    video.style.transform = 'translate(calc(-50% + var(--avatar-x, 0px)), calc(-50% + var(--avatar-y, 0px)))';
+                    video.style.border = 'none';
+                    video.style.pointerEvents = 'auto';
+                    video.style.cursor = 'grab';
+                    video.style.userSelect = 'none';
+                    video.style.webkitUserDrag = 'none';
+                    video.style.display = 'block';
+                    previewCover.appendChild(video);
+                    setupAvatarDrag(video, previewCover);
+                    return;
+                }
+
+                previewAvatarMedia.src = src;
+                previewAvatarMedia.style.display = 'block';
                 const offsetX = normalizeAvatarOffset(avatarOffsetXInput?.value || 0);
                 const offsetY = normalizeAvatarOffset(avatarOffsetYInput?.value || 0);
                 previewAvatarMedia.style.setProperty('--avatar-x', `${offsetX}px`);
                 previewAvatarMedia.style.setProperty('--avatar-y', `${offsetY}px`);
-                return;
-            }
-
-            if (asVideo) {
-                const video = document.createElement('video');
-                video.src = src;
-                video.muted = true;
-                video.loop = true;
-                video.autoplay = true;
-                video.playsInline = true;
-                video.controls = false;
-                video.dataset.avatarPreviewVideo = '1';
-                video.style.position = 'absolute';
-                video.style.left = '50%';
-                video.style.top = '50%';
-                video.style.width = '120%';
-                video.style.height = '120%';
-                video.style.objectFit = 'cover';
-                video.style.transform = 'translate(calc(-50% + var(--avatar-x, 0px)), calc(-50% + var(--avatar-y, 0px)))';
-                video.style.border = 'none';
-                video.style.pointerEvents = 'auto';
-                video.style.cursor = 'grab';
-                video.style.userSelect = 'none';
-                video.style.webkitUserDrag = 'none';
-                video.style.display = 'block';
-                previewCover?.appendChild(video);
-                setupAvatarDrag(video);
-                return;
-            }
-
-            previewAvatarMedia.src = src;
-            previewAvatarMedia.style.display = 'block';
-            const offsetX = normalizeAvatarOffset(avatarOffsetXInput?.value || 0);
-            const offsetY = normalizeAvatarOffset(avatarOffsetYInput?.value || 0);
-            previewAvatarMedia.style.setProperty('--avatar-x', `${offsetX}px`);
-            previewAvatarMedia.style.setProperty('--avatar-y', `${offsetY}px`);
-            previewAvatarMedia.dataset.dragX = String(offsetX);
-            previewAvatarMedia.dataset.dragY = String(offsetY);
-            setupAvatarDrag(previewAvatarMedia);
+                previewAvatarMedia.dataset.dragX = String(offsetX);
+                previewAvatarMedia.dataset.dragY = String(offsetY);
+                setupAvatarDrag(previewAvatarMedia, previewCover);
+            });
         }
 
-        function setupAvatarDrag(element) {
+        function setupAvatarDrag(element, previewCover) {
             if (!element || !previewCover) {
                 return;
             }
@@ -1056,89 +1233,99 @@
         }
 
         function updatePreviewBackground(coverImageUrl = null, asVideo = false) {
-            if (!previewCover) {
-                return;
-            }
+            updateAllPreviewElements((previewCard) => {
+                const cover = previewCard.querySelector('#preview_cover');
+                if (!cover) {
+                    return;
+                }
 
-            const fallback = backgroundPatternInput.value === 'solid'
-                ? backgroundColorInput.value
-                : `linear-gradient(140deg, ${backgroundColorInput.value}, ${accentColorInput.value})`;
+                const fallback = backgroundPatternInput.value === 'solid'
+                    ? backgroundColorInput.value
+                    : `linear-gradient(140deg, ${backgroundColorInput.value}, ${accentColorInput.value})`;
 
-            previewCover.style.backgroundImage = fallback;
-            previewCover.style.backgroundSize = 'cover';
-            previewCover.style.backgroundPosition = 'center';
+                cover.style.backgroundImage = fallback;
+                cover.style.backgroundSize = 'cover';
+                cover.style.backgroundPosition = 'center';
+            });
+            
             setAvatarPreviewMedia(coverImageUrl, asVideo);
         }
 
         function updatePreviewStyling() {
-            if (!previewCard) {
-                return;
-            }
+            updateAllPreviewElements((previewCard) => {
+                previewCard.classList.remove('layout-classic_card', 'layout-wave_split', 'layout-soft_fade', 'layout-hihello_card');
+                previewCard.classList.add(`layout-${layoutStyleInput?.value || 'classic_card'}`);
 
-            previewCard.classList.remove('layout-classic_card', 'layout-wave_split', 'layout-soft_fade', 'layout-hihello_card');
-            previewCard.classList.add(`layout-${layoutStyleInput?.value || 'classic_card'}`);
+                if (cardStyleInput.value === 'bold') {
+                    previewCard.style.boxShadow = '0 25px 60px rgba(0,0,0,0.42)';
+                } else {
+                    previewCard.style.boxShadow = '0 12px 30px rgba(0,0,0,0.24)';
+                }
 
-            if (cardStyleInput.value === 'bold') {
-                previewCard.style.boxShadow = '0 25px 60px rgba(0,0,0,0.42)';
-            } else {
-                previewCard.style.boxShadow = '0 12px 30px rgba(0,0,0,0.24)';
-            }
-
-            if (cardStyleInput.value === 'clean') {
-                previewCard.style.borderRadius = '8px';
-            } else {
-                previewCard.style.borderRadius = '16px';
-            }
+                if (cardStyleInput.value === 'clean') {
+                    previewCard.style.borderRadius = '8px';
+                } else {
+                    previewCard.style.borderRadius = '16px';
+                }
+            });
 
             const currentAvatar = avatarUrlInput?.value || '';
             updatePreviewBackground(currentAvatar, isVideoMedia(currentAvatar));
         }
 
         function setPreviewLogo(nextUrl) {
-            if (!previewLogo) {
-                return;
-            }
+            updateAllPreviewElements((previewCard) => {
+                const logo = previewCard.querySelector('.preview-logo');
+                if (!logo) {
+                    return;
+                }
 
-            if (!nextUrl || nextUrl.trim() === '') {
-                previewLogo.src = emptyImage;
-                previewLogo.classList.add('placeholder');
-                previewLogo.alt = 'Profile logo placeholder';
-                return;
-            }
+                if (!nextUrl || nextUrl.trim() === '') {
+                    logo.src = emptyImage;
+                    logo.classList.add('placeholder');
+                    logo.alt = 'Profile logo placeholder';
+                    return;
+                }
 
-            previewLogo.src = nextUrl;
-            previewLogo.classList.remove('placeholder');
-            previewLogo.alt = 'Profile logo preview';
+                logo.src = nextUrl;
+                logo.classList.remove('placeholder');
+                logo.alt = 'Profile logo preview';
+            });
         }
 
         function renderPreviewBadges(rawValue) {
-            if (!previewBadges || !previewBadgesWrap) {
-                return;
-            }
+            updateAllPreviewElements((previewCard) => {
+                const badges = previewCard.querySelector('#preview_badges');
+                const badgesWrap = previewCard.querySelector('#preview_badges_wrap');
+                
+                if (!badges || !badgesWrap) {
+                    return;
+                }
 
-            const source = Array.isArray(rawValue) ? rawValue : (typeof rawValue === 'string' ? rawValue : '');
-            const badges = (Array.isArray(source) ? source : source
-                .split(/\r?\n|,/)
-                .map((item) => item.trim())
-                .filter(Boolean))
-                .slice(0, 10);
+                const source = Array.isArray(rawValue) ? rawValue : (typeof rawValue === 'string' ? rawValue : '');
+                const badgeArray = (Array.isArray(source) ? source : source
+                    .split(/\r?\n|,/)
+                    .map((item) => item.trim())
+                    .filter(Boolean))
+                    .slice(0, 10);
 
-            previewBadges.innerHTML = '';
+                badges.innerHTML = '';
 
-            if (badges.length === 0) {
-                previewBadgesWrap.style.display = 'none';
-                return;
-            }
+                if (badgeArray.length === 0) {
+                    badgesWrap.style.display = 'none';
+                    return;
+                }
 
-            badges.forEach((badgeUrl) => {
-                const badgeImage = document.createElement('img');
-                badgeImage.className = 'preview-badge';
-                badgeImage.src = badgeUrl;
-                badgeImage.alt = 'Badge image';
-                previewBadges.appendChild(badgeImage);
+                badgeArray.forEach((badgeUrl) => {
+                    const badgeImage = document.createElement('img');
+                    badgeImage.className = 'preview-badge';
+                    badgeImage.src = badgeUrl;
+                    badgeImage.alt = 'Badge image';
+                    badges.appendChild(badgeImage);
+                });
+
+                badgesWrap.style.display = 'block';
             });
-
-            previewBadgesWrap.style.display = 'block';
         }
 
         function renderBadgeAlbumPreview(filesOrUrls) {
@@ -1256,20 +1443,39 @@
         }
 
         displayNameInput?.addEventListener('input', () => {
-            previewName.textContent = displayNameInput.value || '{{ $user->name }}';
+            updateAllPreviewElements((previewCard) => {
+                const nameEl = previewCard.querySelector('#preview_display_name');
+                if (nameEl) {
+                    nameEl.textContent = displayNameInput.value || '{{ $user->name }}';
+                }
+            });
         });
 
         displayNameFontSizeInput?.addEventListener('input', () => {
-            const size = displayNameFontSizeInput.value;
-            previewName.style.fontSize = `${size}px`;
+            updateAllPreviewElements((previewCard) => {
+                const nameEl = previewCard.querySelector('#preview_display_name');
+                if (nameEl) {
+                    nameEl.style.fontSize = `${displayNameFontSizeInput.value}px`;
+                }
+            });
         });
 
         titleInput?.addEventListener('input', () => {
-            previewTitle.textContent = titleInput.value;
+            updateAllPreviewElements((previewCard) => {
+                const titleEl = previewCard.querySelector('#preview_title');
+                if (titleEl) {
+                    titleEl.textContent = titleInput.value;
+                }
+            });
         });
 
         bioInput?.addEventListener('input', () => {
-            previewBio.textContent = bioInput.value;
+            updateAllPreviewElements((previewCard) => {
+                const bioEl = previewCard.querySelector('#preview_bio');
+                if (bioEl) {
+                    bioEl.textContent = bioInput.value;
+                }
+            });
         });
 
         avatarUrlInput?.addEventListener('input', () => {
@@ -1373,6 +1579,37 @@
 
         setPreviewLogo(logoUrlInput?.value || '');
         updatePreviewBackground(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
+
+        // Tab Switching Functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+
+        function switchTab(tabName) {
+            // Hide all tab panes
+            tabPanes.forEach((pane) => pane.classList.remove('is-active'));
+
+            // Deactivate all buttons
+            tabButtons.forEach((btn) => btn.classList.remove('is-active'));
+
+            // Show selected pane
+            const selectedPane = document.getElementById(`${tabName}-pane`);
+            if (selectedPane) {
+                selectedPane.classList.add('is-active');
+            }
+
+            // Activate selected button
+            const selectedButton = document.querySelector(`[data-tab="${tabName}"]`);
+            if (selectedButton) {
+                selectedButton.classList.add('is-active');
+            }
+        }
+
+        tabButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+                switchTab(tabName);
+            });
+        });
     </script>
 </body>
 </html>

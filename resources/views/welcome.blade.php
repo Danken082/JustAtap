@@ -464,10 +464,10 @@
                 @endauth
             </div>
         </nav>
-
+<!-- 
         @if (session('status'))
             <p class="flash">{{ session('status') }}</p>
-        @endif
+        @endif -->
 
         <section class="hero reveal reveal-delay-2">
             <video class="hero-video" autoplay muted loop playsinline>

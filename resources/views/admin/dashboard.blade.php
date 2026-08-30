@@ -124,6 +124,37 @@
             font-size: 0.82rem;
         }
 
+        .alert {
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 132, 71, 0.5);
+            border-radius: 8px;
+            color: #ffe1d2;
+            background: rgba(255, 132, 71, 0.16);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            min-width: 190px;
+        }
+
+        .actions form { margin: 0; }
+        .action {
+            display: inline-block;
+            padding: 5px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 6px;
+            color: #ffe1d2;
+            background: transparent;
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .action.danger { color: #ffb3b3; border-color: rgba(255, 120, 120, 0.45); }
+
         .pill {
             display: inline-flex;
             border: 1px solid rgba(255, 132, 71, 0.5);
@@ -169,6 +200,54 @@
             color: var(--muted);
         }
 
+        .user-search {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .user-search input {
+            min-width: 0;
+            flex: 1;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 9px 10px;
+            background: #0e1623;
+            color: var(--text);
+            font: inherit;
+        }
+
+        .user-search button,
+        .user-search a {
+            border: 0;
+            border-radius: 8px;
+            padding: 9px 12px;
+            background: var(--accent);
+            color: #1c1010;
+            font: inherit;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .user-search a {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--muted);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         @media (max-width: 980px) {
             .stats,
             .grid,
@@ -193,6 +272,10 @@
             </div>
         </header>
 
+        @if (session('success'))
+            <div class="alert">{{ session('success') }}</div>
+        @endif
+
         <section class="stats" aria-label="Admin summary">
             <article class="stat">
                 <p class="label">Total Users</p>
@@ -215,6 +298,14 @@
         <section class="grid">
             <article class="panel">
                 <h2>Users</h2>
+                <form class="user-search" method="GET" action="{{ route('admin.dashboard') }}">
+                    <label class="sr-only" for="user_search">Search users</label>
+                    <input id="user_search" name="user_search" type="search" value="{{ $userSearch }}" placeholder="Search by name, email, or card ID">
+                    <button type="submit">Search</button>
+                    @if ($userSearch !== '')
+                        <a href="{{ route('admin.dashboard') }}">Clear</a>
+                    @endif
+                </form>
                 <table>
                     <thead>
                         <tr>
@@ -222,7 +313,7 @@
                             <th>Email</th>
                             <th>Card ID</th>
                             <th>Profile</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                             <th>Registered</th>
                         </tr>
                     </thead>
@@ -240,7 +331,24 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{ route('admin.cards.index', ['user_id' => $user->id]) }}" style="color:#ffd6b5; font-weight:700; text-decoration:none;">Edit Card</a>
+                                    <div class="actions">
+                                        <a class="action" href="{{ route('admin.users.profile.edit', $user) }}">Edit builder</a>
+                                        <form method="POST" action="{{ route('admin.users.profile-builder.toggle', $user) }}">
+                                            @csrf
+                                            <button class="action" type="submit">{{ $user->profile?->profile_builder_active === false ? 'Activate' : 'Deactivate' }}</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('admin.users.duplicate', $user) }}">
+                                            @csrf
+                                            <button class="action" type="submit">Duplicate</button>
+                                        </form>
+                                        @if (auth()->id() !== $user->id)
+                                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user and their profile? This cannot be undone.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="action danger" type="submit">Delete</button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td>{{ $user->created_at?->format('Y-m-d H:i') }}</td>
                             </tr>

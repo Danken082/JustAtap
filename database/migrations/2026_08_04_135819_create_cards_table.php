@@ -12,7 +12,8 @@ return new class extends Migration
             $table->id();
             $table->string('card_number')->unique();
             $table->string('name');
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

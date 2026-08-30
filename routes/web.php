@@ -53,6 +53,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/edit', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/personal-info', [ProfileController::class, 'updatePersonalInfo'])->name('profile.personal-info.update');
     Route::post('/profile/links', [ProfileController::class, 'addLink'])->name('profile.links.add');
     Route::delete('/profile/links/{link}', [ProfileController::class, 'removeLink'])->name('profile.links.remove');
 
@@ -71,7 +72,13 @@ Route::middleware(['auth', 'admin'])
         Route::get('/cards', [CardGenerationController::class, 'index'])->name('cards.index');
         Route::post('/cards/generate', [CardGenerationController::class, 'generate'])->name('cards.generate');
         Route::put('/cards/{card}', [CardGenerationController::class, 'update'])->name('cards.update');
-        Route::post('/users/{user}/profile', [CardGenerationController::class, 'updateUserProfile'])->name('users.profile.update');
+        Route::post('/users/{user}/duplicate', [AdminController::class, 'duplicateUser'])->name('users.duplicate');
+        Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.destroy');
+        Route::post('/users/{user}/profile-builder/toggle', [AdminController::class, 'toggleProfileBuilder'])->name('users.profile-builder.toggle');
+        Route::get('/users/{user}/profile/edit', [ProfileController::class, 'editAdminUserProfile'])->name('users.profile.edit');
+        Route::post('/users/{user}/profile', [ProfileController::class, 'updateUserProfile'])->name('users.profile.update');
+        Route::post('/users/{user}/profile/links', [ProfileController::class, 'addUserProfileLink'])->name('users.profile.links.add');
+        Route::delete('/users/{user}/profile/links/{link}', [ProfileController::class, 'removeUserProfileLink'])->name('users.profile.links.remove');
 
         Route::resource('products', ProductController::class)->except(['show']);
         Route::get('/profileedit/{cardId}', [ProfileController::class, 'editUserProfile'])->name('profile.edituserprofile');

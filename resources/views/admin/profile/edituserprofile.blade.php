@@ -592,13 +592,19 @@
         $selectedTypeMeta = $linkTypes[$selectedType] ?? reset($linkTypes);
         $groupedLinkTypes = collect($linkTypes)->groupBy('category', true);
         $layoutStyle = old('layout_style', $profile->layout_style ?? 'classic_card');
+        $adminEditor = $adminEditor ?? false;
+        $profileUpdateRoute = $adminEditor ? route('admin.users.profile.update', $user) : route('profile.update');
     @endphp
 
     <main class="wrap">
         <header class="head">
             <h1>Profile Builder</h1>
             <div>
-                <a href="{{ route('home') }}">Home</a>
+                @if ($adminEditor)
+                    <a href="{{ route('admin.dashboard') }}">Admin Dashboard</a>
+                @else
+                    <a href="{{ route('home') }}">Home</a>
+                @endif
                 <span> | </span>
                 <a href="{{ $publicCardUrl }}" target="_blank">View Public Card</a>
             </div>
@@ -617,7 +623,7 @@
                 <h2>Design & Info</h2>
                 <p class="small">Customize your digital profile card and virtual contact details.</p>
 
-                <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ $profileUpdateRoute }}" enctype="multipart/form-data">
                     @csrf
                     <div class="fields">
                         <div>
@@ -735,7 +741,7 @@
                 <h2>Add Icon Links</h2>
                 <p class="small">Choose an icon first, then add your account link, number, or contact info for that icon.</p>
 
-                <form method="POST" action="{{ route('profile.links.add') }}">
+                    <form method="POST" action="{{ $adminEditor ? route('admin.users.profile.links.add', $user) : route('profile.links.add') }}">
                     @csrf
                     <input id="type" name="type" type="hidden" value="{{ $selectedType }}">
 
@@ -782,7 +788,7 @@
                 @foreach ($profile->links as $link)
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:8px 10px;">
                         <span><i class="bi {{ $linkTypes[$link->type]['icon'] ?? 'bi-link-45deg' }}"></i> {{ $link->label }}</span>
-                        <form method="POST" action="{{ route('profile.links.remove', ['link' => $link->id]) }}">
+                        <form method="POST" action="{{ $adminEditor ? route('admin.users.profile.links.remove', ['user' => $user, 'link' => $link->id]) : route('profile.links.remove', ['link' => $link->id]) }}">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="danger">Remove</button>
@@ -899,23 +905,6 @@
         const previewBadges = document.getElementById('preview_badges');
 
         const emptyImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-
-        function setActiveIcon(choiceButton) {
-            iconChoices.forEach((button) => button.classList.remove('is-active'));
-            choiceButton.classList.add('is-active');
-
-            const selectedType = choiceButton.dataset.type || 'website';
-            const selectedLabel = choiceButton.dataset.label || 'Link';
-            const selectedPlaceholder = choiceButton.dataset.placeholder || 'your-link-or-contact';
-
-            linkTypeInput.value = selectedType;
-            valueInput.placeholder = selectedPlaceholder;
-
-        }
-
-        iconChoices.forEach((button) => {
-            button.addEventListener('click', () => setActiveIcon(button));
-        });
 
         copyCardUrlButton?.addEventListener('click', async () => {
             try {

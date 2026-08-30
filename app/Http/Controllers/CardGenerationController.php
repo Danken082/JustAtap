@@ -135,6 +135,7 @@ class CardGenerationController extends Controller
             'card_style' => 'glass',
             'background_pattern' => 'gradient',
             'badge_images' => [],
+            'profile_builder_active' => true,
         ]);
     }
 }

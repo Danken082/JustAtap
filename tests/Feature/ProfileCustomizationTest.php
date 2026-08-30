@@ -44,4 +44,31 @@ class ProfileCustomizationTest extends TestCase
             'https://example.com/badge-2.png',
         ], $profile->badge_images);
     }
+
+    public function test_user_can_add_multiple_profile_links_in_one_submission(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/profile/links', [
+            'links' => [
+                [
+                    'type' => 'instagram',
+                    'label' => 'Instagram',
+                    'value' => 'instagram.com/jane',
+                ],
+                [
+                    'type' => 'website',
+                    'label' => 'Portfolio',
+                    'value' => 'example.com',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('status', 'Links added.');
+
+        $this->assertCount(2, $user->fresh()->profile->links);
+        $this->assertSame('https://instagram.com/jane', $user->fresh()->profile->links->first()->value);
+        $this->assertSame('https://example.com', $user->fresh()->profile->links->last()->value);
+    }
 }
