@@ -848,7 +848,7 @@
                     <h3 style="margin:0;">Scan Or Tap Access</h3>
                     <p class="small" style="margin-top:6px;">This is the profile link encoded in your card. Users can scan the QR code or tap your NFC card to open your live profile instantly.</p>
                     <div class="scan-grid">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ urlencode($publicCardUrl) }}" alt="QR code for public profile">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={{ urlencode($publicCardUrl) }}&ecc=M&margin=10{{ !empty($profile->avatar_url) ? '&logo='.urlencode($profile->avatar_url) : (!empty($profile->logo_url) ? '&logo='.urlencode($profile->logo_url) : '') }}" alt="QR code for public profile">
                         <div>
                             <label for="public_card_url">Public Card URL</label>
                             <input id="public_card_url" type="text" value="{{ $publicCardUrl }}" readonly>

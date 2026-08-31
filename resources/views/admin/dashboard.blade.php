@@ -153,7 +153,38 @@
             font-weight: 700;
             cursor: pointer;
         }
+        .action.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #1c1010;
+        }
         .action.danger { color: #ffb3b3; border-color: rgba(255, 120, 120, 0.45); }
+        .action:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .bulk-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .bulk-tools .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        .bulk-tools input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
 
         .pill {
             display: inline-flex;
@@ -306,59 +337,77 @@
                         <a href="{{ route('admin.dashboard') }}">Clear</a>
                     @endif
                 </form>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Card ID</th>
-                            <th>Profile</th>
-                            <th>Actions</th>
-                            <th>Registered</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($users as $user)
+
+                <form method="POST" action="{{ route('admin.users.qr.download') }}" id="bulk-qr-form">
+                    @csrf
+                    <div class="bulk-tools">
+                        <div class="left">
+                            <input id="select-all-users" type="checkbox" aria-label="Select all users">
+                            <label for="select-all-users">Select all</label>
+                        </div>
+                        <button class="action primary" id="download-selected-qr" type="submit" disabled>Download QR</button>
+                    </div>
+
+                    <table>
+                        <thead>
                             <tr>
-                                <td>{{ $user->name }}</td>
-                                <td>{{ $user->email }}</td>
-                                <td>{{ $user->card_id }}</td>
-                                <td>
-                                    @if ($user->profile)
-                                        <a href="{{ route('profile.public', ['cardId' => $user->card_id]) }}" target="_blank" rel="noopener">Public Card</a>
-                                    @else
-                                        <span class="muted">No profile yet</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="actions">
-                                        <a class="action" href="{{ route('admin.users.profile.edit', $user) }}">Edit builder</a>
-                                        <form method="POST" action="{{ route('admin.users.profile-builder.toggle', $user) }}">
-                                            @csrf
-                                            <button class="action" type="submit">{{ $user->profile?->profile_builder_active === false ? 'Activate' : 'Deactivate' }}</button>
-                                        </form>
-                                        <form method="POST" action="{{ route('admin.users.duplicate', $user) }}">
-                                            @csrf
-                                            <button class="action" type="submit">Duplicate</button>
-                                        </form>
-                                        @if (auth()->id() !== $user->id)
-                                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user and their profile? This cannot be undone.');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="action danger" type="submit">Delete</button>
-                                            </form>
+                                <th style="width:32px;">
+                                    <input id="select-all-table-users" type="checkbox" aria-label="Select all users in table" class="table-select-toggle">
+                                </th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Card ID</th>
+                                <th>Profile</th>
+                                <th>Actions</th>
+                                <th>Registered</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            @forelse ($users as $user)
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="user_ids[]" value="{{ $user->id }}" class="user-qr-checkbox" aria-label="Select {{ $user->name }}">
+                                    </td>
+                                    <td>{{ $user->name }}</td>
+                                    <td>{{ $user->email }}</td>
+                                    <td>{{ $user->card_id }}</td>
+                                    <td>
+                                        @if ($user->profile)
+                                            <a href="{{ route('profile.public', ['cardId' => $user->card_id]) }}" target="_blank" rel="noopener">Public Card</a>
+                                        @else
+                                            <span class="muted">No profile yet</span>
                                         @endif
-                                    </div>
-                                </td>
-                                <td>{{ $user->created_at?->format('Y-m-d H:i') }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="muted">No users available.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                    </td>
+                                    <td>
+                                        <div class="actions">
+                                            <a class="action" href="{{ route('admin.users.profile.edit', $user) }}">Edit builder</a>
+                                            <form method="POST" action="{{ route('admin.users.profile-builder.toggle', $user) }}">
+                                                @csrf
+                                                <button class="action" type="submit">{{ $user->profile?->profile_builder_active === false ? 'Activate' : 'Deactivate' }}</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('admin.users.duplicate', $user) }}">
+                                                @csrf
+                                                <button class="action" type="submit">Duplicate</button>
+                                            </form>
+                                            @if (auth()->id() !== $user->id)
+                                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user and their profile? This cannot be undone.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="action danger" type="submit">Delete</button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>{{ $user->created_at?->format('Y-m-d H:i') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="muted">No users available.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </form>
             </article>
 
             <article class="panel">
@@ -370,6 +419,7 @@
                             <th>Owner</th>
                             <th>Style</th>
                             <th>Links</th>
+                            <th>QR</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -382,10 +432,21 @@
                                     <span class="pill">{{ $profile->background_pattern }}</span>
                                 </td>
                                 <td>{{ $profile->links_count }}</td>
+                                <td>
+                                    @if ($profile->user)
+                                        <select class="profile-qr-select" data-open-url="{{ route('profile.public', ['cardId' => $profile->user->card_id]) }}" data-qr-download-url="{{ route('admin.users.profile.qr.download', $profile->user) }}">
+                                            <option value="">Choose action</option>
+                                            <option value="download">Download QR</option>
+                                            <option value="open">Open profile</option>
+                                        </select>
+                                    @else
+                                        <span class="muted">n/a</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="muted">No profiles available.</td>
+                                <td colspan="5" class="muted">No profiles available.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -448,5 +509,89 @@
             </div>
         </section>
     </main>
+
+    <script>
+        const userSearchInput = document.getElementById('user_search');
+        const userTableRows = Array.from(document.querySelectorAll('#users-table-body tr'));
+        const clearSearchLink = document.querySelector('.user-search a');
+        const bulkQrForm = document.getElementById('bulk-qr-form');
+        const selectAllUsers = document.getElementById('select-all-users');
+        const tableSelectToggle = document.getElementById('select-all-table-users');
+        const downloadSelectedQr = document.getElementById('download-selected-qr');
+        const userQrCheckboxes = Array.from(document.querySelectorAll('.user-qr-checkbox'));
+
+        function applyUserSearchFilter() {
+            const query = (userSearchInput?.value || '').trim().toLowerCase();
+
+            userTableRows.forEach((row) => {
+                const rowText = (row.textContent || '').toLowerCase();
+                row.style.display = (!query || rowText.includes(query)) ? '' : 'none';
+            });
+        }
+
+        if (userSearchInput) {
+            userSearchInput.addEventListener('input', applyUserSearchFilter);
+        }
+
+        if (clearSearchLink) {
+            clearSearchLink.addEventListener('click', function () {
+                if (userSearchInput) {
+                    userSearchInput.value = '';
+                }
+                applyUserSearchFilter();
+            });
+        }
+
+        function syncBulkQrState() {
+            const checkedBoxes = userQrCheckboxes.filter((checkbox) => checkbox.checked);
+            const allChecked = userQrCheckboxes.length > 0 && checkedBoxes.length === userQrCheckboxes.length;
+
+            if (selectAllUsers) {
+                selectAllUsers.checked = allChecked;
+            }
+
+            if (tableSelectToggle) {
+                tableSelectToggle.checked = allChecked;
+            }
+
+            if (downloadSelectedQr) {
+                downloadSelectedQr.disabled = checkedBoxes.length === 0;
+            }
+        }
+
+        if (selectAllUsers) {
+            selectAllUsers.addEventListener('change', function () {
+                userQrCheckboxes.forEach((checkbox) => {
+                    checkbox.checked = this.checked;
+                });
+                syncBulkQrState();
+            });
+        }
+
+        if (tableSelectToggle) {
+            tableSelectToggle.addEventListener('change', function () {
+                userQrCheckboxes.forEach((checkbox) => {
+                    checkbox.checked = this.checked;
+                });
+                syncBulkQrState();
+            });
+        }
+
+        userQrCheckboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', syncBulkQrState);
+        });
+
+        if (bulkQrForm) {
+            bulkQrForm.addEventListener('submit', function (event) {
+                const checkedBoxes = userQrCheckboxes.filter((checkbox) => checkbox.checked);
+                if (checkedBoxes.length === 0) {
+                    event.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        syncBulkQrState();
+    </script>
 </body>
 </html>

@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ProfileContactMail;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class ProfileCustomizationTest extends TestCase
@@ -70,5 +72,29 @@ class ProfileCustomizationTest extends TestCase
         $this->assertCount(2, $user->fresh()->profile->links);
         $this->assertSame('https://instagram.com/jane', $user->fresh()->profile->links->first()->value);
         $this->assertSame('https://example.com', $user->fresh()->profile->links->last()->value);
+    }
+
+    public function test_public_profile_can_send_contact_vcard_to_entered_email(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'name' => 'Jane Public',
+            'card_id' => 'ID-2026-000777',
+        ]);
+
+        $response = $this->post(route('profile.public.share', ['cardId' => $user->card_id]), [
+            'name' => 'John Smith',
+            'email' => 'john@example.com',
+            'phone' => '+1 555 123 4567',
+        ]);
+
+        $response->assertNoContent();
+
+        Mail::assertSent(ProfileContactMail::class, function ($mail) {
+            return $mail->hasTo('john@example.com')
+                && $mail->contactName === 'John Smith'
+                && $mail->profileOwnerName === 'Jane Public';
+        });
     }
 }

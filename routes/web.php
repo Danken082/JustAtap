@@ -75,6 +75,8 @@ Route::middleware(['auth', 'admin'])
         Route::post('/users/{user}/duplicate', [AdminController::class, 'duplicateUser'])->name('users.duplicate');
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.destroy');
         Route::post('/users/{user}/profile-builder/toggle', [AdminController::class, 'toggleProfileBuilder'])->name('users.profile-builder.toggle');
+        Route::post('/users/qr/download', [AdminController::class, 'downloadSelectedProfileQrs'])->name('users.qr.download');
+        Route::get('/users/{user}/profile/qr', [AdminController::class, 'downloadProfileQr'])->name('users.profile.qr.download');
         Route::get('/users/{user}/profile/edit', [ProfileController::class, 'editAdminUserProfile'])->name('users.profile.edit');
         Route::post('/users/{user}/profile', [ProfileController::class, 'updateUserProfile'])->name('users.profile.update');
         Route::post('/users/{user}/profile/links', [ProfileController::class, 'addUserProfileLink'])->name('users.profile.links.add');
@@ -86,3 +88,12 @@ Route::middleware(['auth', 'admin'])
 
 
 Route::get('/p/{cardId}', [ProfileController::class, 'showPublic'])->name('profile.public');
+Route::post('/p/{cardId}/share', [ProfileController::class, 'sharePublicProfile'])->name('profile.public.share');
+
+Route::get('/test-zip', function () {
+    return [
+        'php_version' => PHP_VERSION,
+        'zip_loaded' => extension_loaded('zip'),
+        'zip_class' => class_exists('ZipArchive'),
+    ];
+});

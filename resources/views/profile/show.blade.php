@@ -53,6 +53,165 @@
             box-shadow: 0 22px 44px rgba(11, 15, 24, 0.14);
         }
 
+        .save-contact-wrap {
+            padding: 0 12px 12px;
+        }
+
+        .save-contact-button {
+            width: 100%;
+            background: #181d22;
+            color: #fff;
+            border: 0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 1.02rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.2);
+        }
+
+        .save-contact-button i {
+            font-size: 1.05rem;
+        }
+
+        .save-contact-link {
+            margin-top: 10px;
+            display: block;
+            text-align: center;
+            color: #2d5f8b;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.87rem;
+        }
+
+        .contact-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.28);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .contact-modal.is-open {
+            display: flex;
+        }
+
+        .contact-modal-card {
+            width: min(560px, 100%);
+            background: #f3f5f7;
+            border-radius: 18px;
+            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.18);
+            padding: 20px 20px 18px;
+            border: 1px solid rgba(17, 24, 39, 0.05);
+        }
+
+        .contact-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .contact-modal-title {
+            margin: 0;
+            font-size: clamp(1.1rem, 2vw, 2rem);
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        .contact-modal-close {
+            border: 0;
+            background: transparent;
+            color: #4b5563;
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field label {
+            font-size: 0.92rem;
+            color: #4b5563;
+            font-weight: 600;
+        }
+
+        .field input {
+            border: 0;
+            border-bottom: 1px solid rgba(17, 24, 39, 0.15);
+            background: transparent;
+            padding: 10px 0;
+            font-size: 1.02rem;
+            color: #111827;
+            outline: none;
+        }
+
+        .field input:focus {
+            border-bottom-color: #60a5fa;
+        }
+
+        .field .input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(17, 24, 39, 0.15);
+            padding-right: 6px;
+        }
+
+        .field .input-wrap i {
+            color: #6b7280;
+            font-size: 1.1rem;
+            width: 18px;
+            text-align: center;
+        }
+
+        .field .input-wrap input {
+            flex: 1;
+            border-bottom: 0;
+            padding: 10px 0;
+        }
+
+        .continue-button {
+            border: 0;
+            border-radius: 10px;
+            background: #8ec8f7;
+            color: #0f172a;
+            padding: 14px 18px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .privacy-note {
+            text-align: center;
+            color: #4b5563;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
         .cover {
             position: relative;
             height: 280px;
@@ -366,10 +525,29 @@
             font-size: 0.76rem;
             color: #8a93a3;
         }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                display: block;
+            }
+
+            .card-shell {
+                width: 360px;
+                margin: 0 auto;
+                box-shadow: none;
+                border: 1px solid #d9dee7;
+            }
+
+            .contact-modal {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
-    <article class="card-shell layout-{{ $layoutStyle }}">
+    <article id="profile-card" class="card-shell layout-{{ $layoutStyle }}">
         <div class="cover">
             @if ($profile->avatar_url && $isAvatarVideo)
                 <video autoplay muted loop playsinline>
@@ -421,5 +599,173 @@
 
         <p class="foot">Powered by Just A Tap</p>
     </article>
+
+    <div class="save-contact-wrap">
+        <button type="button" class="save-contact-button" id="save-contact-button">
+            <i class="bi bi-person-vcard"></i>
+            Save Contact
+        </button>
+    </div>
+
+    <div class="contact-modal" id="contact-modal" aria-modal="true" role="dialog">
+        <div class="contact-modal-card">
+            <div class="contact-modal-header">
+                <h2 class="contact-modal-title">Share your information with {{ $displayName }}.</h2>
+                <button type="button" class="contact-modal-close" id="contact-modal-close" aria-label="Close">×</button>
+            </div>
+
+            <form class="contact-form" id="contact-form">
+                <div class="field">
+                    <label for="contact-name">Your name</label>
+                    <input id="contact-name" name="name" type="text" placeholder="Your name" value="{{ auth()->user()?->name ?? '' }}">
+                </div>
+
+                <div class="field">
+                    <label for="contact-email">Your email</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-envelope"></i>
+                        <input id="contact-email" name="email" type="email" placeholder="Your email">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="contact-phone">Your phone number</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-telephone"></i>
+                        <input id="contact-phone" name="phone" type="tel" placeholder="Your phone number">
+                    </div>
+                </div>
+
+                <button type="submit" class="continue-button">Continue</button>
+                <div class="privacy-note"><i class="bi bi-shield-lock"></i> Your data will always be kept private.</div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('contact-modal');
+        const openButton = document.getElementById('save-contact-button');
+        const closeButton = document.getElementById('contact-modal-close');
+        const form = document.getElementById('contact-form');
+
+        const escapeHtml = (value = '') => value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        const createVCard = (name, email, phone) => {
+            const safeName = (name || '{{ $displayName }}').trim() || '{{ $displayName }}';
+            const safeEmail = (email || '').trim();
+            const safePhone = (phone || '').trim();
+            const vcard = [
+                'BEGIN:VCARD',
+                'VERSION:3.0',
+                `FN:${safeName}`,
+                `N:${safeName.split(' ').reverse().join(';')};${safeName.split(' ').slice(0, -1).join(' ')};;`,
+            ];
+
+            if (safeEmail) {
+                vcard.push(`EMAIL:${safeEmail}`);
+            }
+
+            if (safePhone) {
+                vcard.push(`TEL;TYPE=CELL:${safePhone}`);
+            }
+
+            vcard.push('END:VCARD');
+            return vcard.join('\r\n');
+        };
+
+        const triggerDownload = (name, email, phone) => {
+            const vcard = createVCard(name, email, phone);
+            const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${(name || '{{ $displayName }}').replace(/\s+/g, '-').toLowerCase() || 'contact'}.vcf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+
+        const sendContactShare = (name, email, phone) => {
+            const trimmedEmail = (email || '').trim();
+            if (!trimmedEmail) {
+                return;
+            }
+
+            fetch('{{ route('profile.public.share', ['cardId' => $user->card_id]) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: name || '',
+                    email: trimmedEmail,
+                    phone: phone || '',
+                })
+            }).catch(() => {
+                triggerDownload(name, email, phone);
+            });
+        };
+
+        const closeModal = () => {
+            modal.classList.remove('is-open');
+        };
+
+        if (openButton) {
+            openButton.addEventListener('click', () => modal.classList.add('is-open'));
+        }
+
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                const name = document.getElementById('contact-name')?.value || '';
+                const email = document.getElementById('contact-email')?.value || '';
+                const phone = document.getElementById('contact-phone')?.value || '';
+                sendContactShare(name, email, phone);
+                triggerDownload(name, email, phone);
+                closeModal();
+            });
+        }
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                const name = document.getElementById('contact-name')?.value || '';
+                const email = document.getElementById('contact-email')?.value || '';
+                const phone = document.getElementById('contact-phone')?.value || '';
+                sendContactShare(name, email, phone);
+                triggerDownload(name, email, phone);
+                closeModal();
+            }
+        });
+
+        if (form) {
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const name = document.getElementById('contact-name')?.value || '';
+                const email = document.getElementById('contact-email')?.value || '';
+                const phone = document.getElementById('contact-phone')?.value || '';
+                sendContactShare(name, email, phone);
+                triggerDownload(name, email, phone);
+                closeModal();
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                const name = document.getElementById('contact-name')?.value || '';
+                const email = document.getElementById('contact-email')?.value || '';
+                const phone = document.getElementById('contact-phone')?.value || '';
+                sendContactShare(name, email, phone);
+                triggerDownload(name, email, phone);
+                closeModal();
+            }
+        });
+    </script>
 </body>
 </html>

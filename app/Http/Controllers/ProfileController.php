@@ -410,6 +410,29 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function sharePublicProfile(Request $request, string $cardId): \Illuminate\Http\Response
+    {
+        $validated = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = User::where('card_id', $cardId)->firstOrFail();
+        $profile = $this->profileForUser($user);
+
+        \Illuminate\Support\Facades\Mail::to($validated['email'])
+            ->send(new \App\Mail\ProfileContactMail(
+                $profile,
+                $user,
+                $validated['name'] ?? $user->name,
+                $validated['email'],
+                $validated['phone'] ?? '',
+            ));
+
+        return response()->noContent();
+    }
+
     public function updateUserProfile(Request $request, User $user): RedirectResponse
     {
         $profile = $this->profileForUser($user);
