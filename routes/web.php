@@ -31,6 +31,7 @@ Route::get('/', function () {
         ->map(fn (Product $product) => $product->toCatalogArray());
 
     return view('welcome', ['homeProducts' => $homeProducts]);
+    // var_dump($homeProducts);
 })->name('home');
 
 Route::middleware('guest')->group(function () {
@@ -54,13 +55,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/edit', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/personal-info', [ProfileController::class, 'updatePersonalInfo'])->name('profile.personal-info.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/links', [ProfileController::class, 'addLink'])->name('profile.links.add');
     Route::delete('/profile/links/{link}', [ProfileController::class, 'removeLink'])->name('profile.links.remove');
 
     Route::prefix('corporate/cards')->name('corporate.cards.')->group(function () {
         Route::get('/', [CorporateCardController::class, 'index'])->name('index');
         Route::post('/order', [CorporateCardController::class, 'order'])->name('order');
+        Route::post('/reorder', [CorporateCardController::class, 'reorder'])->name('reorder');
         Route::post('/{cardId}/profile', [CorporateCardController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/employees/{user}/deactivate', [CorporateCardController::class, 'deactivateEmployee'])->name('employees.deactivate');
+        Route::delete('/employees/{user}', [CorporateCardController::class, 'deleteEmployee'])->name('employees.delete');
     });
 });
 
@@ -72,6 +77,11 @@ Route::middleware(['auth', 'admin'])
         Route::get('/cards', [CardGenerationController::class, 'index'])->name('cards.index');
         Route::post('/cards/generate', [CardGenerationController::class, 'generate'])->name('cards.generate');
         Route::put('/cards/{card}', [CardGenerationController::class, 'update'])->name('cards.update');
+        Route::get('/corporate-admins/create', [AdminController::class, 'createCorporateAdmin'])->name('corporate-admins.create');
+        Route::post('/corporate-admins', [AdminController::class, 'storeCorporateAdmin'])->name('corporate-admins.store');
+        Route::post('/corporate-admins/{admin}/add-cards', [AdminController::class, 'addCardsToCorporateAdmin'])->name('corporate-admins.add-cards');
+        Route::post('/corporate-admins/{admin}/toggle', [AdminController::class, 'toggleCorporateAdmin'])->name('corporate-admins.toggle');
+        Route::delete('/corporate-admins/{admin}', [AdminController::class, 'destroyCorporateAdmin'])->name('corporate-admins.destroy');
         Route::post('/users/{user}/duplicate', [AdminController::class, 'duplicateUser'])->name('users.duplicate');
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.destroy');
         Route::post('/users/{user}/profile-builder/toggle', [AdminController::class, 'toggleProfileBuilder'])->name('users.profile-builder.toggle');
@@ -87,6 +97,7 @@ Route::middleware(['auth', 'admin'])
     });
 
 
+Route::get('/profile/{cardId}', [ProfileController::class, 'showPublic'])->name('profile.public.alias');
 Route::get('/p/{cardId}', [ProfileController::class, 'showPublic'])->name('profile.public');
 Route::post('/p/{cardId}/share', [ProfileController::class, 'sharePublicProfile'])->name('profile.public.share');
 

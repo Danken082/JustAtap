@@ -587,7 +587,7 @@
 </head>
 <body>
     @php
-        $publicCardUrl = route('profile.public', ['cardId' => $user->card_id]);
+        $publicCardUrl = $user->card_id ? route('profile.public', ['cardId' => $user->card_id]) : null;
         $selectedType = old('type', 'website');
         $selectedTypeMeta = $linkTypes[$selectedType] ?? reset($linkTypes);
         $groupedLinkTypes = collect($linkTypes)->groupBy('category', true);
@@ -605,8 +605,10 @@
                 @else
                     <a href="{{ route('home') }}">Home</a>
                 @endif
-                <span> | </span>
-                <a href="{{ $publicCardUrl }}" target="_blank">View Public Card</a>
+                @if ($publicCardUrl)
+                    <span> | </span>
+                    <a href="{{ $publicCardUrl }}" target="_blank">View Public Card</a>
+                @endif
             </div>
         </header>
 
@@ -843,6 +845,7 @@
                 </div>
             </div>
 
+            @if ($publicCardUrl)
             <div class="actions" style="margin-top: 14px; align-items: stretch;">
                 <div style="width:100%;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;">
                     <h3 style="margin:0;">Scan Or Tap Access</h3>
@@ -859,6 +862,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </section>
 
             </div>

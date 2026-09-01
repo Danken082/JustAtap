@@ -107,18 +107,11 @@ class CardGenerationController extends Controller
 
     private function generateCardNumber(): string
     {
-        $year = date('Y');
-        $next = 1;
+        do {
+            $candidate = 'CARD-' . strtoupper(\Illuminate\Support\Str::random(12));
+        } while (Card::where('card_number', $candidate)->exists() || User::where('card_id', $candidate)->exists());
 
-        while (true) {
-            $candidate = 'ID-' . $year . '-' . str_pad($next, 6, '0', STR_PAD_LEFT);
-
-            if (! Card::where('card_number', $candidate)->exists() && ! User::where('card_id', $candidate)->exists()) {
-                return $candidate;
-            }
-
-            $next++;
-        }
+        return $candidate;
     }
 
     private function profileForUser(User $user): UserProfile
@@ -136,6 +129,8 @@ class CardGenerationController extends Controller
             'background_pattern' => 'gradient',
             'badge_images' => [],
             'profile_builder_active' => true,
+                 'avatar_offset_x' => 0,
+            'avatar_offset_y' => 0,
         ]);
     }
 }

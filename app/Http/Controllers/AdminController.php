@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cards;
 use App\Models\Product;
 use App\Models\ProfileLink;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Support\CardIdGenerator;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 use ZipArchive;
@@ -47,13 +50,145 @@ class AdminController extends Controller
             ->map(fn (Product $product) => $product->toCatalogArray())
             ->all();
 
+        // Fetch corporate admins with their card orders
+        $corporateAdmins = User::where('is_corporate', true)
+            ->with(['cards' => function ($query) {
+                $query->orderBy('sort_order')->orderBy('id');
+            }])
+            ->withCount('cards')
+            ->latest()
+            ->get();
+
         return view('admin.dashboard', [
             'users' => $users,
             'profiles' => $profiles,
             'latestLinks' => $latestLinks,
             'products' => $products,
             'userSearch' => $userSearch,
+            'corporateAdmins' => $corporateAdmins,
         ]);
+    }
+
+    public function createCorporateAdmin(): View
+    {
+        return view('admin.corporate-admin-create');
+    }
+
+    public function storeCorporateAdmin(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'company_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'default_password' => ['required', 'string', 'min:8'],
+            'card_count' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'card_numbers' => ['nullable', 'array'],
+            'card_numbers.*' => ['required', 'string', 'max:255'],
+        ]);
+
+        $cardNumbers = collect($validated['card_numbers'] ?? [])
+            ->filter(fn ($cardNumber) => is_string($cardNumber) && trim($cardNumber) !== '')
+            ->values()
+            ->all();
+
+        $cardCount = isset($validated['card_count']) ? (int) $validated['card_count'] : 0;
+        $manualCardNumbers = array_values(array_unique($cardNumbers));
+
+        $corporateAdmin = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'company_name' => $validated['company_name'],
+            'is_corporate' => true,
+            'card_id' => null,
+            'password' => Hash::make($validated['default_password']),
+        ]);
+
+        $companyCardId = CardIdGenerator::generateForCompany($validated['company_name']);
+        $corporateAdmin->update(['card_id' => $companyCardId]);
+
+        $cardsToCreate = [$companyCardId];
+
+        if ($manualCardNumbers !== []) {
+            $cardsToCreate = array_merge($cardsToCreate, $manualCardNumbers);
+        }
+
+        if ($manualCardNumbers === [] && $cardCount > 0) {
+            $cardsToCreate = array_merge($cardsToCreate, CardIdGenerator::generateMultipleForCompany($validated['company_name'], $cardCount));
+        }
+
+        $cardsToCreate = array_values(array_unique($cardsToCreate));
+
+        foreach ($cardsToCreate as $position => $cardId) {
+            Cards::create([
+                'card_number' => $cardId,
+                'name' => $validated['company_name'],
+                'purchaser_id' => $corporateAdmin->id,
+                'sort_order' => $position + 1,
+            ]);
+        }
+
+        $displayCardIds = array_values(array_unique($cardsToCreate));
+        $successMessage = 'Corporate admin registered. Generated card IDs: '.implode(', ', $displayCardIds).'.';
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', $successMessage);
+    }
+
+    public function addCardsToCorporateAdmin(Request $request, User $admin): RedirectResponse
+    {
+        abort_unless($admin->is_corporate, 403, 'User is not a corporate admin');
+
+        $validated = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1', 'max:500'],
+        ]);
+
+        $quantity = (int) $validated['quantity'];
+        $maxSortOrder = (int) Cards::where('purchaser_id', $admin->id)->max('sort_order') ?? 0;
+
+        $generatedCardIds = CardIdGenerator::generateMultipleForCompany($admin->company_name ?? 'CORPORATE', $quantity);
+
+        foreach ($generatedCardIds as $position => $cardId) {
+            Cards::create([
+                'card_number' => $cardId,
+                'name' => $admin->company_name,
+                'purchaser_id' => $admin->id,
+                'sort_order' => $maxSortOrder + $position + 1,
+            ]);
+        }
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', 'Added '.$quantity.' new card ID'.($quantity !== 1 ? 's' : '').' to '.$admin->name.': '.implode(', ', $generatedCardIds).'.');
+    }
+
+    public function toggleCorporateAdmin(User $admin): RedirectResponse
+    {
+        abort_unless($admin->is_corporate, 403, 'User is not a corporate admin');
+
+        $admin->update([
+            'is_active' => !$admin->is_active,
+        ]);
+
+        $status = $admin->is_active ? 'activated' : 'deactivated';
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', 'Corporate admin '.$admin->name.' has been '.$status.'.');
+    }
+
+    public function destroyCorporateAdmin(User $admin, DatabaseManager $database): RedirectResponse
+    {
+        abort_unless($admin->is_corporate, 403, 'User is not a corporate admin');
+
+        $adminName = $admin->name;
+
+        $database->transaction(function () use ($admin): void {
+            // Delete all cards associated with this corporate admin
+            Cards::where('purchaser_id', $admin->id)->delete();
+            // Delete the corporate admin user
+            $admin->delete();
+        });
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', 'Corporate admin '.$adminName.' and all their card data have been deleted.');
     }
 
     public function duplicateUser(User $user, DatabaseManager $database): RedirectResponse

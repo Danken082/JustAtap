@@ -29,6 +29,12 @@ class AuthController extends Controller
                 function (string $attribute, mixed $value, \Closure $fail) {
                     if (! Cards::where('card_number', $value)->exists()) {
                         $fail('ID number doesn\'t exist.');
+
+                        return;
+                    }
+
+                    if (User::where('card_id', $value)->exists()) {
+                        $fail('This card has already been claimed by a user.');
                     }
                 },
             ],

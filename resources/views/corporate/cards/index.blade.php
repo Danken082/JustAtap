@@ -44,12 +44,34 @@
                     <tr><td><a href="{{ route('corporate.cards.index', ['card_id' => $card->card_number]) }}">{{ $card->card_number }}</a></td><td>{{ $card->name }}</td><td>{{ $cardEmployee?->name ?? 'Awaiting registration' }}</td></tr>
                 @empty <tr><td colspan="3" class="muted">No corporate cards ordered yet.</td></tr> @endforelse
                 </tbody></table>
+
+                @if ($cards->isNotEmpty())
+                    <form method="POST" action="{{ route('corporate.cards.reorder') }}" style="margin-top: 18px;">
+                        @csrf
+                        <label for="card_ids">Reorder cards</label>
+                        <select id="card_ids" name="card_ids[]" multiple size="{{ min($cards->count(), 10) }}" style="min-height: 140px;">
+                            @foreach ($cards as $card)
+                                <option value="{{ $card->id }}" @selected(request('card_id') === $card->card_number)>{{ $card->card_number }} - {{ $card->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="muted">Select your cards in the order you want them displayed, then submit.</p>
+                        <button type="submit">Save card order</button>
+                    </form>
+                @endif
             </section>
             @if ($selectedCard)
                 <section class="panel full">
                     <h2>{{ $selectedCard->card_number }}</h2>
                     @if ($employee)
                         <p><a href="{{ route('profile.public', ['cardId' => $selectedCard->card_number]) }}" target="_blank" rel="noopener">View employee live profile</a></p>
+                        <div style="display:flex; gap:10px; margin: 12px 0 18px; flex-wrap:wrap;">
+                            <form method="POST" action="{{ route('corporate.cards.employees.deactivate', $employee) }}">@csrf
+                                <button type="submit">Deactivate account</button>
+                            </form>
+                            <form method="POST" action="{{ route('corporate.cards.employees.delete', $employee) }}" onsubmit="return confirm('Delete this employee account and their card assignment?');">@csrf @method('DELETE')
+                                <button type="submit" style="background:#8b1e2d;">Delete account</button>
+                            </form>
+                        </div>
                         <form method="POST" action="{{ route('corporate.cards.profile.update', $selectedCard->card_number) }}">@csrf
                             <label for="display_name">Display name</label><input id="display_name" name="display_name" value="{{ old('display_name', $profile->display_name) }}" required>
                             <label for="title">Title</label><input id="title" name="title" value="{{ old('title', $profile->title) }}">

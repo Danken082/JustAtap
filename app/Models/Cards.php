@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Cards extends Model
 {
     use HasFactory;
-        protected $fillable = [
+
+    protected $fillable = [
         'purchaser_id',
         'card_number',
         'name',
+        'sort_order',
     ];
 
     public function purchaser(): BelongsTo

@@ -742,6 +742,28 @@
                                 <strong>{{ number_format($profile->profile_view_count ?? 0) }}</strong>
                                 <span class="small"> live profile views</span>
                             </div>
+
+                            <form method="POST" action="{{ route('profile.password.update') }}" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.09); padding-top:20px;">
+                                @csrf
+                                <h2 style="margin-bottom:10px;">Change Password</h2>
+                                <div class="fields">
+                                    <div>
+                                        <label for="current_password">Current password</label>
+                                        <input id="current_password" type="password" name="current_password" required autocomplete="current-password">
+                                    </div>
+                                    <div>
+                                        <label for="new_password">New password</label>
+                                        <input id="new_password" type="password" name="password" required autocomplete="new-password">
+                                    </div>
+                                    <div>
+                                        <label for="password_confirmation">Confirm new password</label>
+                                        <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password">
+                                    </div>
+                                </div>
+                                <div class="actions">
+                                    <button type="submit">Update Password</button>
+                                </div>
+                            </form>
                         </article>
                     </div>
                 </div>

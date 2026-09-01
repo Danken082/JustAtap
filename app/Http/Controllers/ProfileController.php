@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -108,6 +109,8 @@ class ProfileController extends Controller
             'background_pattern' => 'gradient',
             'badge_images' => [],
             'profile_builder_active' => true,
+            'avatar_offset_x' => 0,
+            'avatar_offset_y' => 0,
         ]);
     }
 
@@ -216,6 +219,20 @@ class ProfileController extends Controller
         $user->update($validated);
 
         return back()->with('status', 'Personal information updated.');
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ]);
+
+        $request->user()->forceFill([
+            'password' => Hash::make($validated['password']),
+        ])->save();
+
+        return redirect()->route('home')->with('status', 'Password updated successfully.');
     }
 
     public function update(Request $request): RedirectResponse
