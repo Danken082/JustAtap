@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Mail\GuestCheckoutSummaryMail;
 use App\Mail\GuestOrderReceiptMail;
 use App\Models\Cards;
+use App\Models\ProfileLink;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -216,5 +217,170 @@ class AdminCardAndProfileManagementTest extends TestCase
         $this->assertNotNull($profile);
         $this->assertSame('Updated Display Name', $profile->display_name);
         $this->assertSame('wave_split', $profile->layout_style);
+    }
+
+    public function test_admin_can_duplicate_a_user_with_a_new_card_and_copied_profile(): void
+    {
+        config(['app.admin_emails' => ['admin@example.com']]);
+
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $source = User::factory()->create([
+            'name' => 'Source User',
+            'email' => 'source@example.com',
+            'card_id' => 'ID-2026-000200',
+        ]);
+        $sourceProfile = $source->profile()->create([
+            'display_name' => 'Source Profile',
+            'profile_builder_active' => true,
+        ]);
+        $sourceProfile->links()->create([
+            'type' => 'website',
+            'label' => 'Website',
+            'value' => 'https://example.com',
+            'sort_order' => 1,
+        ]);
+        Cards::create(['card_number' => $source->card_id, 'name' => 'Source Card']);
+
+        $response = $this->actingAs($admin)->post(route('admin.users.duplicate', $source));
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $duplicate = User::where('email', 'source.copy@example.com')->firstOrFail();
+        $this->assertNotSame($source->card_id, $duplicate->card_id);
+        $this->assertDatabaseHas('cards', ['card_number' => $duplicate->card_id]);
+        $this->assertSame('Source Profile', $duplicate->profile->display_name);
+        $this->assertCount(1, $duplicate->profile->links);
+    }
+
+    public function test_admin_profile_editor_renders_for_the_selected_user(): void
+    {
+        config(['app.admin_emails' => ['admin@example.com']]);
+
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $user = User::factory()->create(['name' => 'Editable User', 'card_id' => 'ID-2026-000202']);
+        $user->profile()->create(['display_name' => 'Editable Profile']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.profile.edit', $user))
+            ->assertOk()
+            ->assertSee('Editable User')
+            ->assertSee(route('admin.users.profile.update', $user), false)
+            ->assertSee('Save Profile');
+    }
+
+    public function test_admin_can_search_users_by_name_email_or_card_id(): void
+    {
+        config(['app.admin_emails' => ['admin@example.com']]);
+
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        User::factory()->create([
+            'name' => 'Searchable Member',
+            'email' => 'searchable@example.com',
+            'card_id' => 'ID-2026-000204',
+        ]);
+        User::factory()->create([
+            'name' => 'Hidden Member',
+            'email' => 'hidden@example.com',
+            'card_id' => 'ID-2026-000205',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard', ['user_search' => 'searchable@example.com']))
+            ->assertOk()
+            ->assertSee('Searchable Member')
+            ->assertDontSee('Hidden Member')
+            ->assertSee('searchable@example.com');
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard', ['user_search' => '000205']))
+            ->assertOk()
+            ->assertSee('Hidden Member')
+            ->assertDontSee('Searchable Member');
+    }
+
+    public function test_user_can_update_personal_name_and_email_from_profile_editor(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Old Name',
+            'email' => 'old@example.com',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('profile.personal-info.update'), [
+                'name' => 'New Name',
+                'email' => 'new@example.com',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'name' => 'New Name',
+            'email' => 'new@example.com',
+        ]);
+    }
+
+    public function test_public_profile_views_are_counted_and_shown_in_the_editor(): void
+    {
+        $user = User::factory()->create(['card_id' => 'ID-2026-000203']);
+        $user->profile()->create([
+            'display_name' => 'Viewed Profile',
+            'profile_builder_active' => true,
+        ]);
+
+        $this->get(route('profile.public', $user->card_id))->assertOk();
+        $this->get(route('profile.public', $user->card_id))->assertOk();
+
+        $this->assertSame(2, $user->fresh()->profile->profile_view_count);
+        $this->actingAs($user)
+            ->get(route('profile.edit'))
+            ->assertOk()
+            ->assertSee('2')
+            ->assertSee('live profile views');
+    }
+
+    public function test_admin_can_deactivate_and_reactivate_a_public_profile(): void
+    {
+        config(['app.admin_emails' => ['admin@example.com']]);
+
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $user = User::factory()->create(['card_id' => 'ID-2026-000201']);
+        $user->profile()->create([
+            'display_name' => 'Active Profile',
+            'profile_builder_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.profile-builder.toggle', $user))
+            ->assertRedirect(route('admin.dashboard'));
+        $this->assertFalse($user->fresh()->profile->profile_builder_active);
+        $this->get(route('profile.public', $user->card_id))->assertNotFound();
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.profile-builder.toggle', $user))
+            ->assertRedirect(route('admin.dashboard'));
+        $this->assertTrue($user->fresh()->profile->profile_builder_active);
+        $this->get(route('profile.public', $user->card_id))->assertOk();
+    }
+
+    public function test_admin_can_delete_a_user_and_their_profile(): void
+    {
+        config(['app.admin_emails' => ['admin@example.com']]);
+
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $user = User::factory()->create();
+        $profile = $user->profile()->create(['display_name' => 'To Delete']);
+        ProfileLink::create([
+            'user_profile_id' => $profile->id,
+            'type' => 'website',
+            'label' => 'Website',
+            'value' => 'https://example.com',
+            'sort_order' => 1,
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.users.destroy', $user))
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('user_profiles', ['id' => $profile->id]);
     }
 }

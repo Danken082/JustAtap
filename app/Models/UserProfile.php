@@ -23,6 +23,8 @@ class UserProfile extends Model
         'avatar_offset_y',
         'logo_url',
         'badge_images',
+        'profile_builder_active',
+        'profile_view_count',
         'background_color',
         'text_color',
         'accent_color',
@@ -32,6 +34,8 @@ class UserProfile extends Model
 
     protected $casts = [
         'badge_images' => 'array',
+        'profile_builder_active' => 'boolean',
+        'profile_view_count' => 'integer',
     ];
 
     public function user(): BelongsTo

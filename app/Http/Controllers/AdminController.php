@@ -6,14 +6,28 @@ use App\Models\Product;
 use App\Models\ProfileLink;
 use App\Models\User;
 use App\Models\UserProfile;
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
+use ZipArchive;
 
 class AdminController extends Controller
 {
-    public function dashboard(): View
+    public function dashboard(Request $request): View
     {
+        $userSearch = trim((string) $request->query('user_search', ''));
+
         $users = User::with('profile')
             ->withCount('profile')
+            ->when($userSearch !== '', function ($query) use ($userSearch): void {
+                $query->where(function ($userQuery) use ($userSearch): void {
+                    $userQuery->where('name', 'like', "%{$userSearch}%")
+                        ->orWhere('email', 'like', "%{$userSearch}%")
+                        ->orWhere('card_id', 'like', "%{$userSearch}%");
+                });
+            })
             ->latest()
             ->get();
 
@@ -38,6 +52,166 @@ class AdminController extends Controller
             'profiles' => $profiles,
             'latestLinks' => $latestLinks,
             'products' => $products,
+            'userSearch' => $userSearch,
         ]);
+    }
+
+    public function duplicateUser(User $user, DatabaseManager $database): RedirectResponse
+    {
+        $duplicate = $database->transaction(function () use ($user): User {
+            $cardId = $this->generateCardNumber();
+            $duplicate = $user->replicate();
+            $duplicate->name = $user->name.' (Copy)';
+            $duplicate->email = $this->uniqueDuplicateEmail($user->email);
+            $duplicate->card_id = $cardId;
+            $duplicate->save();
+
+            $sourceProfile = $user->profile()->with('links')->first();
+
+            if ($sourceProfile) {
+                $profile = $sourceProfile->replicate();
+                $profile->user_id = $duplicate->id;
+                $profile->save();
+
+                foreach ($sourceProfile->links as $link) {
+                    $duplicateLink = $link->replicate();
+                    $duplicateLink->user_profile_id = $profile->id;
+                    $duplicateLink->save();
+                }
+            }
+
+            \App\Models\Cards::create([
+                'card_number' => $cardId,
+                'name' => $sourceProfile?->display_name ?: $duplicate->name,
+            ]);
+
+            return $duplicate;
+        });
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "User duplicated as {$duplicate->email}.");
+    }
+
+    public function deleteUser(User $user): RedirectResponse
+    {
+        if (auth()->id() === $user->id) {
+            abort(403, 'You cannot delete your own admin account.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.dashboard')->with('success', 'User deleted successfully.');
+    }
+
+    public function toggleProfileBuilder(User $user): RedirectResponse
+    {
+        $profile = $user->profile()->firstOrCreate([], [
+            'display_name' => $user->name,
+            'profile_builder_active' => true,
+        ]);
+        $profile->update(['profile_builder_active' => ! $profile->profile_builder_active]);
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', $profile->profile_builder_active ? 'Profile builder activated.' : 'Profile builder deactivated.');
+    }
+
+    public function downloadProfileQr(User $user)
+    {
+        $publicUrl = route('profile.public', ['cardId' => $user->card_id]);
+        $qrUrl = $this->buildQrCodeUrl($publicUrl, $user->profile?->avatar_url, $user->profile?->logo_url);
+        $filename = preg_replace('/[^A-Za-z0-9._-]+/', '_', $user->name ?: $user->email ?: 'profile').'_profile_qr.png';
+
+        $response = Http::timeout(20)->get($qrUrl);
+
+        if ($response->failed()) {
+            abort(500, 'Unable to generate QR code for this profile.');
+        }
+
+        return response($response->body())
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+    }
+
+    public function downloadSelectedProfileQrs(Request $request)
+    {
+        $userIds = $request->input('user_ids', []);
+        $userIds = is_array($userIds) ? array_values(array_unique(array_filter($userIds, 'is_numeric'))) : [];
+
+        if ($userIds === []) {
+            return back()->with('error', 'Select at least one user to download QR codes.');
+        }
+
+        $users = User::whereIn('id', $userIds)->get();
+
+        if ($users->isEmpty()) {
+            return back()->with('error', 'No valid users were selected.');
+        }
+
+        if (! class_exists('ZipArchive')) {
+            abort(500, 'ZIP support is not enabled in this PHP environment.');
+        }
+
+        $zipTempPath = tempnam(sys_get_temp_dir(), 'profile_qr_');
+        $zip = new ZipArchive();
+
+        if ($zip->open($zipTempPath, ZipArchive::OVERWRITE | ZipArchive::CREATE) !== true) {
+            abort(500, 'Unable to create QR archive.');
+        }
+
+        foreach ($users as $user) {
+            $publicUrl = route('profile.public', ['cardId' => $user->card_id]);
+            $qrUrl = $this->buildQrCodeUrl($publicUrl, $user->profile?->avatar_url, $user->profile?->logo_url);
+            $filename = preg_replace('/[^A-Za-z0-9._-]+/', '_', $user->name ?: $user->email ?: 'profile').'_profile_qr.png';
+
+            $response = Http::timeout(20)->get($qrUrl);
+            if ($response->successful()) {
+                $zip->addFromString($filename, $response->body());
+            }
+        }
+
+        $zip->close();
+
+        return response()->download($zipTempPath, 'profile_qr_download.zip')->deleteFileAfterSend(true);
+    }
+
+    private function buildQrCodeUrl(string $publicUrl, ?string $avatarUrl = null, ?string $logoUrl = null): string
+    {
+        $baseUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&format=png&data='.urlencode($publicUrl);
+        $centerImage = ! empty($avatarUrl) ? $avatarUrl : $logoUrl;
+
+        if (! empty($centerImage)) {
+            $baseUrl .= '&ecc=M&margin=10&logo='.urlencode($centerImage);
+        }
+
+        return $baseUrl;
+    }
+
+    private function generateCardNumber(): string
+    {
+        $next = 1;
+
+        while (true) {
+            $candidate = 'ID-'.date('Y').'-'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+
+            if (! User::where('card_id', $candidate)->exists() && ! \App\Models\Cards::where('card_number', $candidate)->exists()) {
+                return $candidate;
+            }
+
+            $next++;
+        }
+    }
+
+    private function uniqueDuplicateEmail(string $email): string
+    {
+        [$localPart, $domain] = array_pad(explode('@', $email, 2), 2, 'example.com');
+        $candidate = $localPart.'.copy@'.$domain;
+        $suffix = 2;
+
+        while (User::where('email', $candidate)->exists()) {
+            $candidate = $localPart.'.copy'.$suffix.'@'.$domain;
+            $suffix++;
+        }
+
+        return $candidate;
     }
 }

@@ -42,7 +42,7 @@
         }
 
         /* Ambient HUD grid, fixed behind everything */
-        body::before {
+        /* body::before {
             content: '';
             position: fixed;
             inset: 0;
@@ -54,7 +54,7 @@
             background-size: 48px 48px;
             -webkit-mask-image: radial-gradient(1200px 700px at 50% 0%, #000 0%, transparent 78%);
             mask-image: radial-gradient(1200px 700px at 50% 0%, #000 0%, transparent 78%);
-        }
+        } */
 
         .shell { position: relative; z-index: 1; width: min(1440px, 92%); margin: 0 auto; }
 

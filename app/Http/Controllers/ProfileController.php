@@ -8,6 +8,7 @@ use App\Models\UserProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -32,6 +33,7 @@ class ProfileController extends Controller
             'discord' => ['label' => 'Discord', 'icon' => 'bi-discord', 'category' => 'Communication', 'placeholder' => 'discord.gg/invite-code', 'value_type' => 'url'],
             'email' => ['label' => 'Email', 'icon' => 'bi-envelope-fill', 'category' => 'Communication', 'placeholder' => 'you@example.com', 'value_type' => 'email'],
             'phone' => ['label' => 'Phone', 'icon' => 'bi-telephone-fill', 'category' => 'Communication', 'placeholder' => '+639171234567', 'value_type' => 'phone'],
+            'viber' => ['label' => 'Viber', 'icon' => 'bi-telephone-fill', 'category' => 'Communication', 'placeholder' => '+639171234567', 'value_type' => 'viber'],
             'zoom' => ['label' => 'Zoom', 'icon' => 'bi-camera-video-fill', 'category' => 'Conferencing', 'placeholder' => 'zoom.us/j/meeting-id', 'value_type' => 'url'],
             'teams' => ['label' => 'Teams', 'icon' => 'bi-microsoft-teams', 'category' => 'Conferencing', 'placeholder' => 'teams.microsoft.com/l/meetup-join/...', 'value_type' => 'url'],
             'google_meet' => ['label' => 'Meet', 'icon' => 'bi-camera-video', 'category' => 'Conferencing', 'placeholder' => 'meet.google.com/abc-defg-hij', 'value_type' => 'url'],
@@ -106,6 +108,7 @@ class ProfileController extends Controller
             'card_style' => 'glass',
             'background_pattern' => 'gradient',
             'badge_images' => [],
+            'profile_builder_active' => true,
         ]);
     }
 
@@ -166,15 +169,21 @@ class ProfileController extends Controller
         }
 
         $existingBadgeImages = [];
-        $existingRaw = $request->input('existing_badge_images');
+        $rawBadgeImages = $request->input('badge_images');
 
-        if (is_string($existingRaw) && trim($existingRaw) !== '') {
-            $decoded = json_decode($existingRaw, true);
+        if (is_array($rawBadgeImages)) {
+            $existingBadgeImages = $this->normalizeBadgeImages($rawBadgeImages);
+        } else {
+            $existingRaw = $request->input('existing_badge_images');
 
-            if (is_array($decoded)) {
-                $existingBadgeImages = $this->normalizeBadgeImages($decoded);
-            } else {
-                $existingBadgeImages = $this->normalizeBadgeImages($existingRaw);
+            if (is_string($existingRaw) && trim($existingRaw) !== '') {
+                $decoded = json_decode($existingRaw, true);
+
+                if (is_array($decoded)) {
+                    $existingBadgeImages = $this->normalizeBadgeImages($decoded);
+                } else {
+                    $existingBadgeImages = $this->normalizeBadgeImages($existingRaw);
+                }
             }
         }
 
@@ -192,7 +201,22 @@ class ProfileController extends Controller
             'user' => $user,
             'profile' => $profile,
             'linkTypes' => $this->linkTypes(),
+            'adminEditor' => false,
         ]);
+    }
+
+    public function updatePersonalInfo(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        ]);
+
+        $user->update($validated);
+
+        return back()->with('status', 'Personal information updated.');
     }
 
     public function update(Request $request): RedirectResponse
@@ -204,7 +228,9 @@ class ProfileController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:500'],
             'avatar_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,mp4,mov,m4v,webm,avi', 'max:4096'],
+            'avatar_url' => ['nullable', 'string', 'max:500'],
             'logo_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'logo_url' => ['nullable', 'string', 'max:500'],
             'badge_images' => ['nullable'],
             'remove_avatar' => ['nullable', 'boolean'],
             'remove_logo' => ['nullable', 'boolean'],
@@ -219,8 +245,8 @@ class ProfileController extends Controller
 
         $profile = $this->profileForUser($request->user());
         $profileData = collect($validated)->except(['avatar_image', 'remove_avatar', 'logo_image', 'remove_logo'])->all();
-        $profileData['avatar_url'] = $profile->avatar_url;
-        $profileData['logo_url'] = $profile->logo_url;
+        $profileData['avatar_url'] = $validated['avatar_url'] ?? $profile->avatar_url;
+        $profileData['logo_url'] = $validated['logo_url'] ?? $profile->logo_url;
         $profileData['badge_images'] = $this->saveBadgeImages($request);
         $profileData['avatar_offset_x'] = (int) round((float) ($validated['avatar_offset_x'] ?? $profile->avatar_offset_x ?? 0));
         $profileData['avatar_offset_y'] = (int) round((float) ($validated['avatar_offset_y'] ?? $profile->avatar_offset_y ?? 0));
@@ -256,29 +282,78 @@ class ProfileController extends Controller
         return back()->with('status', 'Profile design saved.');
     }
 
+    /**
+     * @return array<int, array{type: string, label: string, value: string}>
+     */
+    private function normalizeLinkEntries(Request $request): array
+    {
+        $rawEntries = $request->input('links');
+
+        if (! is_array($rawEntries) || $rawEntries === []) {
+            $rawEntries = [$request->only(['type', 'label', 'value'])];
+        }
+
+        $allowedTypes = array_keys($this->linkTypes());
+        $entries = [];
+
+        foreach ($rawEntries as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $validator = Validator::make($entry, [
+                'type' => ['required', Rule::in($allowedTypes)],
+                'label' => ['required', 'string', 'max:100'],
+                'value' => ['required', 'string', 'max:255'],
+            ]);
+
+            if ($validator->fails()) {
+                throw new \Illuminate\Validation\ValidationException($validator);
+            }
+
+            $validated = $validator->validated();
+            $entries[] = [
+                'type' => $validated['type'],
+                'label' => trim((string) $validated['label']),
+                'value' => $this->normalizeLinkValue($validated),
+            ];
+        }
+
+        return $entries;
+    }
+
+    private function saveLinkEntries(UserProfile $profile, array $entries): int
+    {
+        $sortOrderStart = ((int) $profile->links()->max('sort_order')) + 1;
+
+        foreach ($entries as $index => $entry) {
+            $profile->links()->create([
+                'type' => $entry['type'],
+                'label' => $entry['label'],
+                'value' => $entry['value'],
+                'sort_order' => $sortOrderStart + $index,
+            ]);
+        }
+
+        return count($entries);
+    }
+
     public function addLink(Request $request): RedirectResponse
     {
-        $allowedTypes = array_keys($this->linkTypes());
-
-        $validated = $request->validate([
-            'type' => ['required', Rule::in($allowedTypes)],
-            'label' => ['required', 'string', 'max:100'],
-            'value' => ['required', 'string', 'max:255'],
-        ]);
-
         $profile = $this->profileForUser($request->user());
-        $value = $this->normalizeLinkValue($validated);
+        $entries = $this->normalizeLinkEntries($request);
 
-        $sortOrder = ((int) $profile->links()->max('sort_order')) + 1;
+        if ($entries === []) {
+            $request->validate([
+                'type' => ['required'],
+                'label' => ['required'],
+                'value' => ['required'],
+            ]);
+        }
 
-        $profile->links()->create([
-            'type' => $validated['type'],
-            'label' => $validated['label'],
-            'value' => $value,
-            'sort_order' => $sortOrder,
-        ]);
+        $created = $this->saveLinkEntries($profile, $entries);
 
-        return back()->with('status', 'Link added.');
+        return back()->with('status', $created > 1 ? 'Links added.' : 'Link added.');
     }
 
     public function removeLink(Request $request, ProfileLink $link): RedirectResponse
@@ -294,16 +369,69 @@ class ProfileController extends Controller
         return back()->with('status', 'Link removed.');
     }
 
+    public function addUserProfileLink(Request $request, User $user): RedirectResponse
+    {
+        $profile = $this->profileForUser($user);
+        $entries = $this->normalizeLinkEntries($request);
+
+        if ($entries === []) {
+            $request->validate([
+                'type' => ['required'],
+                'label' => ['required'],
+                'value' => ['required'],
+            ]);
+        }
+
+        $created = $this->saveLinkEntries($profile, $entries);
+
+        return back()->with('status', $created > 1 ? 'Profile links added.' : 'Profile link added.');
+    }
+
+    public function removeUserProfileLink(User $user, ProfileLink $link): RedirectResponse
+    {
+        abort_unless($link->user_profile_id === $user->profile?->id, 404);
+        $link->delete();
+
+        return back()->with('status', 'Profile link removed.');
+    }
+
     public function showPublic(string $cardId): View
     {
         $user = User::where('card_id', $cardId)->firstOrFail();
         $profile = $this->profileForUser($user)->load('links');
+
+        abort_if($profile->profile_builder_active === false, 404);
+        $profile->increment('profile_view_count');
+        $profile->refresh();
 
         return view('profile.show', [
             'user' => $user,
             'profile' => $profile,
             'linkTypes' => $this->linkTypes(),
         ]);
+    }
+
+    public function sharePublicProfile(Request $request, string $cardId): \Illuminate\Http\Response
+    {
+        $validated = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = User::where('card_id', $cardId)->firstOrFail();
+        $profile = $this->profileForUser($user);
+
+        \Illuminate\Support\Facades\Mail::to($validated['email'])
+            ->send(new \App\Mail\ProfileContactMail(
+                $profile,
+                $user,
+                $validated['name'] ?? $user->name,
+                $validated['email'],
+                $validated['phone'] ?? '',
+            ));
+
+        return response()->noContent();
     }
 
     public function updateUserProfile(Request $request, User $user): RedirectResponse
@@ -317,7 +445,9 @@ class ProfileController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:500'],
             'avatar_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'avatar_url' => ['nullable', 'string', 'max:500'],
             'logo_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'logo_url' => ['nullable', 'string', 'max:500'],
             'badge_images' => ['nullable'],
             'remove_avatar' => ['nullable', 'boolean'],
             'remove_logo' => ['nullable', 'boolean'],
@@ -331,8 +461,8 @@ class ProfileController extends Controller
         ]);
 
         $profileData = collect($validated)->except(['avatar_image', 'remove_avatar', 'logo_image', 'remove_logo', 'badge_images'])->all();
-        $profileData['avatar_url'] = $profile->avatar_url;
-        $profileData['logo_url'] = $profile->logo_url;
+        $profileData['avatar_url'] = $validated['avatar_url'] ?? $profile->avatar_url;
+        $profileData['logo_url'] = $validated['logo_url'] ?? $profile->logo_url;
         $profileData['badge_images'] = $this->saveBadgeImages($request);
         $profileData['avatar_offset_x'] = (int) ($validated['avatar_offset_x'] ?? $profile->avatar_offset_x ?? 0);
         $profileData['avatar_offset_y'] = (int) ($validated['avatar_offset_y'] ?? $profile->avatar_offset_y ?? 0);
@@ -377,6 +507,17 @@ class ProfileController extends Controller
             'user' => $user,
             'profile' => $profile,
             'linkTypes' => $this->linkTypes(),
+            'adminEditor' => true,
+        ]);
+    }
+
+    public function editAdminUserProfile(User $user): View
+    {
+        return view('admin.profile.edituserprofile', [
+            'user' => $user,
+            'profile' => $this->profileForUser($user)->load('links'),
+            'linkTypes' => $this->linkTypes(),
+            'adminEditor' => true,
         ]);
     }
 }

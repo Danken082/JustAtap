@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->string('caption')->nullable();
             $table->integer('sort_order')->default(0);
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

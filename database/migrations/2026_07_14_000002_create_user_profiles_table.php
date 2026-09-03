@@ -23,7 +23,8 @@ return new class extends Migration
             $table->string('accent_color')->default('#60a5fa');
             $table->string('card_style')->default('glass');
             $table->string('background_pattern')->default('gradient');
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 
