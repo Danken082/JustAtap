@@ -913,10 +913,6 @@
                                     <input id="text_color" type="color" name="text_color" value="{{ old('text_color', $profile->text_color) }}">
                                 </div>
                                 <div>
-                                    <label for="accent_color">Accent Color</label>
-                                    <input id="accent_color" type="color" name="accent_color" value="{{ old('accent_color', $profile->accent_color) }}">
-                                </div>
-                                <div>
                                     <label for="card_style">Card Style</label>
                                     <select id="card_style" name="card_style">
                                         <option value="glass" @selected(old('card_style', $profile->card_style) === 'glass')>Glass</option>
@@ -1083,7 +1079,6 @@
         const existingBadgeImagesInput = document.getElementById('existing_badge_images');
         const backgroundColorInput = document.getElementById('background_color');
         const textColorInput = document.getElementById('text_color');
-        const accentColorInput = document.getElementById('accent_color');
         const cardStyleInput = document.getElementById('card_style');
         const backgroundPatternInput = document.getElementById('background_pattern');
 
@@ -1261,12 +1256,16 @@
                     return;
                 }
 
-                const fallback = backgroundPatternInput.value === 'solid'
-                    ? backgroundColorInput.value
-                    : `linear-gradient(140deg, ${backgroundColorInput.value}, ${accentColorInput.value})`;
+                const backgroundColor = backgroundColorInput?.value || '#111827';
+                const pattern = backgroundPatternInput?.value || 'gradient';
+                const fallback = pattern === 'solid'
+                    ? `linear-gradient(${backgroundColor}, ${backgroundColor})`
+                    : pattern === 'dots'
+                        ? `radial-gradient(circle, rgba(255,255,255,.28) 1px, transparent 1.5px), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`
+                        : `linear-gradient(140deg, rgba(255,255,255,.2), rgba(0,0,0,.25)), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`;
 
                 cover.style.backgroundImage = fallback;
-                cover.style.backgroundSize = 'cover';
+                cover.style.backgroundSize = pattern === 'dots' ? '14px 14px, cover' : 'cover';
                 cover.style.backgroundPosition = 'center';
             });
             
@@ -1289,6 +1288,18 @@
                 } else {
                     previewCard.style.borderRadius = '16px';
                 }
+
+                const textColor = textColorInput?.value || '#f9fafb';
+                const backgroundColor = backgroundColorInput?.value || '#111827';
+                previewCard.style.color = textColor;
+                previewCard.querySelectorAll('.preview-name, .preview-title, .preview-bio, .preview-link, .preview-badges-title').forEach((element) => {
+                    element.style.color = textColor;
+                });
+                previewCard.querySelectorAll('.preview-link i').forEach((icon) => {
+                    icon.style.backgroundColor = 'transparent';
+                    icon.style.border = `2px solid ${backgroundColor}`;
+                    icon.style.color = backgroundColor;
+                });
             });
 
             const currentAvatar = avatarUrlInput?.value || '';
@@ -1594,13 +1605,14 @@
         renderImageAlbum(logoPreviewAlbum, [logoUrlInput?.value || ''].filter(Boolean));
         setAvatarPreviewMedia(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
 
-        [backgroundColorInput, textColorInput, accentColorInput, cardStyleInput, backgroundPatternInput, layoutStyleInput].forEach((input) => {
+        [backgroundColorInput, textColorInput, cardStyleInput, backgroundPatternInput, layoutStyleInput].forEach((input) => {
             input?.addEventListener('input', updatePreviewStyling);
             input?.addEventListener('change', updatePreviewStyling);
         });
 
         setPreviewLogo(logoUrlInput?.value || '');
         updatePreviewBackground(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
+        updatePreviewStyling();
 
         // Tab Switching Functionality
         const tabButtons = document.querySelectorAll('.tab-button');

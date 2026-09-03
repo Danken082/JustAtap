@@ -74,6 +74,7 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::post('/notifications/{notification}/read', [AdminController::class, 'markNotificationRead'])->name('notifications.read');
         Route::get('/cards', [CardGenerationController::class, 'index'])->name('cards.index');
         Route::post('/cards/generate', [CardGenerationController::class, 'generate'])->name('cards.generate');
         Route::put('/cards/{card}', [CardGenerationController::class, 'update'])->name('cards.update');

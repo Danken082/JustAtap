@@ -119,6 +119,34 @@ class AdminCardAndProfileManagementTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_corporate_card_order_requests_are_not_automatically_generated_and_are_notified_to_admins(): void
+    {
+        config(['app.admin_emails' => ['superadmin@example.com']]);
+
+        $buyer = User::factory()->create([
+            'is_corporate' => true,
+            'company_name' => 'Buyer Company',
+            'card_id' => null,
+            'email' => 'buyer@buyercompany.com',
+        ]);
+
+        Mail::fake();
+
+        $this->actingAs($buyer)
+            ->post(route('corporate.cards.order'), [
+                'name' => 'Sales team cards',
+                'quantity' => 10,
+            ])
+            ->assertRedirect(route('corporate.cards.index'));
+
+        $this->assertDatabaseCount('cards', 0);
+        Mail::assertSent(\App\Mail\CorporateCardOrderRequestMail::class, function ($mail) use ($buyer) {
+            return $mail->hasTo('superadmin@example.com')
+                && $mail->companyName === 'Buyer Company'
+                && $mail->companyEmail === 'buyer@buyercompany.com';
+        });
+    }
+
     public function test_corporate_admin_can_deactivate_and_delete_owned_employee_accounts(): void
     {
         $buyer = User::factory()->create([

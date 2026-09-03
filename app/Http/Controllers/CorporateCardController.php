@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CorporateCardOrderRequestMail;
 use App\Models\Cards as Card;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class CorporateCardController extends Controller
@@ -46,19 +48,20 @@ class CorporateCardController extends Controller
             'name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $maxSortOrder = (int) Card::where('purchaser_id', $request->user()->id)->max('sort_order');
+        $admin = $request->user();
+        $companyName = $admin->company_name ?: $admin->name;
 
-        for ($number = 0; $number < $validated['quantity']; $number++) {
-            Card::create([
-                'purchaser_id' => $request->user()->id,
-                'card_number' => $this->generateCardNumber(),
-                'name' => $validated['name'] ?: $request->user()->name . ' Employee Card',
-                'sort_order' => $maxSortOrder + $number + 1,
-            ]);
+        foreach (config('app.admin_emails', []) as $adminEmail) {
+            Mail::to($adminEmail)->send(new CorporateCardOrderRequestMail(
+                $companyName,
+                $admin->email,
+                (string) ($validated['name'] ?? ''),
+                (int) $validated['quantity'],
+            ));
         }
 
         return redirect()->route('corporate.cards.index')
-            ->with('success', $validated['quantity'] . ' corporate card(s) ordered.');
+            ->with('success', 'Your order request for '.$validated['quantity'].' card(s) has been sent to the admin team. Card IDs will be generated and shared after review.');
     }
 
     public function reorder(Request $request): RedirectResponse
@@ -132,7 +135,6 @@ class CorporateCardController extends Controller
             'bio' => ['nullable', 'string', 'max:500'],
             'background_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'text_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'accent_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'card_style' => ['required', 'in:glass,clean,bold'],
             'background_pattern' => ['required', 'in:gradient,dots,solid'],
         ]);

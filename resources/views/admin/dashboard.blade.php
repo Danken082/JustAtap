@@ -378,6 +378,28 @@
             </div>
         @endif
 
+        @if ($notifications->isNotEmpty())
+            <section class="panel" style="margin-bottom:14px; border-color:rgba(255,132,71,.5);">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
+                    <h2 style="margin:0;">New order notifications <span class="pill">{{ $notifications->count() }}</span></h2>
+                    <span class="muted">Unread</span>
+                </div>
+                @foreach ($notifications as $notification)
+                    @php($notificationData = $notification->data)
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:10px 0; border-top:1px solid rgba(255,255,255,.08);">
+                        <div>
+                            <strong>{{ $notificationData['title'] ?? 'New notification' }}</strong>
+                            <p class="muted" style="margin:4px 0 0;">{{ $notificationData['message'] ?? 'A new product order needs review.' }}</p>
+                        </div>
+                        <form method="POST" action="{{ route('admin.notifications.read', $notification->id) }}">
+                            @csrf
+                            <button class="action primary" type="submit">Mark read</button>
+                        </form>
+                    </div>
+                @endforeach
+            </section>
+        @endif
+
         <section class="stats" aria-label="Admin summary">
             <article class="stat">
                 <p class="label">Total Users</p>

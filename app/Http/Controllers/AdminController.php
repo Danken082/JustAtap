@@ -21,6 +21,10 @@ class AdminController extends Controller
     public function dashboard(Request $request): View
     {
         $userSearch = trim((string) $request->query('user_search', ''));
+        $notifications = $request->user()->unreadNotifications()
+            ->latest()
+            ->limit(10)
+            ->get();
 
         $users = User::with('profile')
             ->withCount('profile')
@@ -66,7 +70,18 @@ class AdminController extends Controller
             'products' => $products,
             'userSearch' => $userSearch,
             'corporateAdmins' => $corporateAdmins,
+            'notifications' => $notifications,
         ]);
+    }
+
+    public function markNotificationRead(Request $request, string $notification): RedirectResponse
+    {
+        $request->user()->unreadNotifications()
+            ->where('id', $notification)
+            ->firstOrFail()
+            ->markAsRead();
+
+        return redirect()->route('admin.dashboard');
     }
 
     public function createCorporateAdmin(): View
