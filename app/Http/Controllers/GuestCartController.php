@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Mail\GuestCheckoutSummaryMail;
+use App\Notifications\NewProductOrderNotification;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -237,6 +239,15 @@ class GuestCartController extends Controller
                     new GuestCheckoutSummaryMail($summary['items'], $summary['total'], $customerName, $customerEmail)
                 );
             }
+
+            User::whereIn('email', $adminEmails)->get()->each(function (User $admin) use ($summary, $customerName, $customerEmail): void {
+                $admin->notify(new NewProductOrderNotification(
+                    $customerName,
+                    $customerEmail,
+                    $summary['items'],
+                    (float) $summary['total'],
+                ));
+            });
         } catch (\Throwable $exception) {
             report($exception);
 

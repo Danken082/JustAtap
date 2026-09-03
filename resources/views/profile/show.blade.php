@@ -18,6 +18,9 @@
         $layoutStyle = in_array($profile->layout_style, ['classic_card', 'wave_split', 'soft_fade', 'hihello_card'], true)
             ? $profile->layout_style
             : 'classic_card';
+        $backgroundPattern = in_array($profile->background_pattern, ['gradient', 'dots', 'solid'], true)
+            ? $profile->background_pattern
+            : 'gradient';
     @endphp
     <style>
         :root {
@@ -26,7 +29,8 @@
             --line: #e5e7eb;
             --ink: #2f3238;
             --muted: #6b7280;
-            --accent: {{ $profile->accent_color }};
+            --profile-background: {{ $profile->background_color }};
+            --profile-text: {{ $profile->text_color }};
         }
 
         * {
@@ -215,17 +219,29 @@
         .cover {
             position: relative;
             height: 280px;
-            background:
+            background-color: {{ $profile->background_color }};
+            background-image:
+                @if ($backgroundPattern === 'dots')
+                    radial-gradient(circle, {{ $profile->text_color }} 1px, transparent 1.5px),
+                @elseif ($backgroundPattern === 'gradient')
+                    linear-gradient(140deg, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.25)),
+                @endif
                 linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.18)),
                 @if ($profile->avatar_url)
                     @if ($isAvatarVideo)
-                        linear-gradient(140deg, {{ $profile->background_color }}, {{ $profile->accent_color }});
+                        linear-gradient(140deg, {{ $profile->background_color }}, {{ $profile->background_color }});
                     @else
                         url('{{ $profile->avatar_url }}') calc(50% + {{ $avatarOffsetX }}px) calc(50% + {{ $avatarOffsetY }}px) / cover no-repeat;
                     @endif
                 @else
-                    linear-gradient(140deg, {{ $profile->background_color }}, {{ $profile->accent_color }});
+                    linear-gradient(140deg, {{ $profile->background_color }}, {{ $profile->background_color }});
                 @endif
+            @if ($backgroundPattern === 'dots')
+                background-size: 14px 14px, cover, cover;
+            @else
+                background-size: cover;
+            @endif
+            background-position: center;
         }
 
         .cover video {
@@ -357,7 +373,7 @@
             font-size: {{ $displayNameSize }}px;
             line-height: 1.12;
             font-weight: 800;
-            color: #22262d;
+            color: var(--profile-text);
         }
 
         .card-shell.layout-wave_split .identity-name,
@@ -369,14 +385,14 @@
             margin: 5px 0 0;
             font-size: 0.98rem;
             font-weight: 500;
-            color: #434954;
+            color: var(--profile-text);
         }
 
         .identity-bio {
             margin: 6px auto 0;
             max-width: 90%;
             font-size: 0.82rem;
-            color: #666f7b;
+            color: var(--profile-text);
             line-height: 1.35;
         }
 
@@ -442,7 +458,7 @@
             border-radius: 12px;
             padding: 10px 10px;
             text-decoration: none;
-            color: #2f3238;
+            color: var(--profile-text);
             transition: background-color 0.18s ease, transform 0.18s ease;
         }
 
@@ -455,8 +471,9 @@
             width: 34px;
             height: 34px;
             border-radius: 999px;
-            background: #85888f;
-            color: #fff;
+            background: transparent;
+            border: 2px solid var(--profile-background);
+            color: var(--profile-background);
             display: grid;
             place-items: center;
             font-size: 1.05rem;

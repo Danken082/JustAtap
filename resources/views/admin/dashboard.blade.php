@@ -88,9 +88,80 @@
             border-radius: 50%;
         }
 
+<<<<<<< HEAD
         ::selection {
             background: rgba(255, 255, 255, 0.25);
             color: #000;
+=======
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 10, 16, 0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 1000;
+        }
+
+        .modal-overlay.is-open {
+            display: flex;
+        }
+
+        .modal-card {
+            position: relative;
+            width: min(620px, 100%);
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            box-shadow: 0 22px 70px rgba(0,0,0,0.45);
+            padding: 30px 28px 24px;
+            color: #edf3ff;
+        }
+
+        .modal-kicker {
+            margin: 0 0 10px;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #9fb3d9;
+        }
+
+        .modal-card h3 {
+            margin: 0 0 12px;
+            font-size: clamp(1.2rem, 2vw, 1.7rem);
+        }
+
+        .modal-body {
+            margin: 0;
+            line-height: 1.7;
+            color: #dfe9ff;
+            white-space: pre-line;
+            font-size: 0.98rem;
+            word-break: break-word;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.03);
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+>>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
         }
 
         /* ── Glass utilities ── */
@@ -509,7 +580,26 @@
         }
     </style>
 </head>
+<<<<<<< HEAD
 <body class="font-sans antialiased">
+=======
+<body>
+    <main class="wrap">
+        <header class="top">
+            <h1>Admin Dashboard</h1>
+            <div>
+                <a href="{{ route('admin.cards.index') }}">Card Studio</a>
+                <span>|</span>
+                <a href="{{ route('admin.corporate-admins.create') }}">Register Corporate Admin</a>
+                <span>|</span>
+                <a href="{{ route('admin.products.index') }}">Products</a>
+                <span>|</span>
+                <a href="{{ route('home') }}">Home</a>
+                <span>|</span>
+                <a href="{{ route('shop.index') }}">Shop</a>
+            </div>
+        </header>
+>>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
 
     <!-- ============================================================ -->
     <!--  STICKY HEADER                                               -->
@@ -569,10 +659,43 @@
 
         <!-- Alert -->
         @if (session('success'))
+<<<<<<< HEAD
             <div class="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-sm text-white/80 backdrop-blur-sm animate-fade-in">
                 <i class="bi bi-check-circle-fill text-white/60 text-base"></i>
                 {{ session('success') }}
             </div>
+=======
+            <div class="modal-overlay is-open" id="generatedCardModal" role="dialog" aria-modal="true" aria-labelledby="generatedCardTitle">
+                <div class="modal-card">
+                    <button class="modal-close" type="button" aria-label="Close modal">×</button>
+                    <p class="modal-kicker">Generated card IDs</p>
+                    <h3 id="generatedCardTitle">Success</h3>
+                    <p class="modal-body">{{ session('success') }}</p>
+                </div>
+            </div>
+        @endif
+
+        @if ($notifications->isNotEmpty())
+            <section class="panel" style="margin-bottom:14px; border-color:rgba(255,132,71,.5);">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
+                    <h2 style="margin:0;">New order notifications <span class="pill">{{ $notifications->count() }}</span></h2>
+                    <span class="muted">Unread</span>
+                </div>
+                @foreach ($notifications as $notification)
+                    @php($notificationData = $notification->data)
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:10px 0; border-top:1px solid rgba(255,255,255,.08);">
+                        <div>
+                            <strong>{{ $notificationData['title'] ?? 'New notification' }}</strong>
+                            <p class="muted" style="margin:4px 0 0;">{{ $notificationData['message'] ?? 'A new product order needs review.' }}</p>
+                        </div>
+                        <form method="POST" action="{{ route('admin.notifications.read', $notification->id) }}">
+                            @csrf
+                            <button class="action primary" type="submit">Mark read</button>
+                        </form>
+                    </div>
+                @endforeach
+            </section>
+>>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
         @endif
 
         <!-- Stats -->
@@ -681,8 +804,13 @@
                                     <td class="text-white/50 text-sm">{{ $user->email }}</td>
                                     <td><span class="text-white/30 font-mono text-xs">{{ $user->card_id }}</span></td>
                                     <td>
+<<<<<<< HEAD
                                         @if ($user->profile)
                                             <a href="{{ route('profile.public', ['cardId' => $user->card_id]) }}" target="_blank" rel="noopener" class="text-white/60 hover:text-white text-sm transition">Public Card</a>
+=======
+                                        @if ($user->profile && $user->card_id)
+                                            <a href="{{ route('profile.public', ['cardId' => $user->card_id]) }}" target="_blank" rel="noopener">Public Card</a>
+>>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
                                         @else
                                             <span class="text-white/20 text-sm">—</span>
                                         @endif
@@ -777,11 +905,33 @@
                     <tbody>
                         @forelse ($latestLinks as $link)
                             <tr>
+<<<<<<< HEAD
                                 <td><span class="text-white/50 text-sm">{{ $link->type }}</span></td>
                                 <td class="font-medium text-white/90">{{ $link->label }}</td>
                                 <td class="text-white/40 text-sm break-all max-w-[200px]">{{ $link->value }}</td>
                                 <td class="text-white/50 text-sm">{{ $link->profile?->user?->email ?? 'n/a' }}</td>
                                 <td class="text-white/20 text-xs">{{ $link->created_at?->format('Y-m-d H:i') }}</td>
+=======
+                                <td>{{ $profile->display_name ?: 'Unnamed' }}</td>
+                                <td>{{ $profile->user?->email ?? 'n/a' }}</td>
+                                <td>
+                                    <span class="pill">{{ $profile->card_style }}</span>
+                                    <span class="pill">{{ $profile->background_pattern }}</span>
+                                </td>
+                                <td>{{ $profile->links_count }}</td>
+                                <td>
+                                    @if ($profile->user && $profile->user->card_id)
+                                        <select class="profile-qr-select" data-open-url="{{ route('profile.public', ['cardId' => $profile->user->card_id]) }}" data-qr-download-url="{{ route('admin.users.profile.qr.download', $profile->user) }}">
+                                            <option value="">Choose action</option>
+                                            <option value="download">Download QR</option>
+                                            <option value="open">Open profile</option>
+                                        </select>
+                                    @else
+                                        <span class="muted">n/a</span>
+                                    @endif
+                                    
+                                </td>
+>>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
                             </tr>
                         @empty
                             <tr>
@@ -837,13 +987,122 @@
                 <p class="text-white/30 text-center py-8 text-sm">No products yet. <a href="{{ route('admin.products.create') }}" class="text-white/60 hover:text-white transition">Add your first product</a>.</p>
             @endif
         </section>
+
+        <section class="panel" style="margin-top:12px;">
+            <h2>Corporate Card Orders</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Corporate Admin</th>
+                        <th>Company</th>
+                        <th>Email</th>
+                        <th>Total Cards</th>
+                        <th>Card IDs</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                        <th>Registered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($corporateAdmins as $admin)
+                        <tr>
+                            <td><strong>{{ $admin->name }}</strong></td>
+                            <td>{{ $admin->company_name }}</td>
+                            <td>{{ $admin->email }}</td>
+                            <td style="text-align:center; font-weight:700;">{{ $admin->cards_count }}</td>
+                            <td style="max-width:400px;">
+                                <details style="cursor:pointer;">
+                                    <summary style="color:#ffd6b5; user-select:none;">View {{ $admin->cards_count }} ID{{ $admin->cards_count !== 1 ? 's' : '' }}</summary>
+                                    <div style="margin-top:8px; padding:8px; background:rgba(255,255,255,0.05); border-radius:6px; max-height:200px; overflow-y:auto;">
+                                        @forelse ($admin->cards as $card)
+                                            <div style="padding:4px 0; font-family:monospace; font-size:0.85rem; color:#d4e0fb;">{{ $card->card_number }}</div>
+                                        @empty
+                                            <p class="muted">No cards assigned</p>
+                                        @endforelse
+                                    </div>
+                                </details>
+                            </td>
+                            <td>
+                                @if ($admin->is_active)
+                                    <span class="pill" style="background:rgba(76,175,80,0.2); border-color:rgba(76,175,80,0.5); color:#90EE90;">Active</span>
+                                @else
+                                    <span class="pill" style="background:rgba(244,67,54,0.2); border-color:rgba(244,67,54,0.5); color:#FF6B6B;">Inactive</span>
+                                @endif
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <form method="POST" action="{{ route('admin.corporate-admins.add-cards', $admin->id) }}" style="display:inline;">
+                                        @csrf
+                                        <button class="action primary" type="button" onclick="promptAddCards(this.form, {{ $admin->id }})">Add Cards</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.corporate-admins.toggle', $admin->id) }}" style="display:inline;">
+                                        @csrf
+                                        <button class="action" type="submit">{{ $admin->is_active ? 'Deactivate' : 'Activate' }}</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.corporate-admins.destroy', $admin->id) }}" onsubmit="return confirm('Delete {{ $admin->name }} and all their card data? This cannot be undone.');" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="action danger" type="submit">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td>{{ $admin->created_at?->format('Y-m-d H:i') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="muted">No corporate admins registered yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </section>
     </main>
 
     <!-- ============================================================ -->
     <!--  JAVASCRIPT  (preserved – all backend logic intact)         -->
     <!-- ============================================================ -->
     <script>
+<<<<<<< HEAD
         // ─── Search filter ──────────────────────────────────────────
+=======
+        const generatedCardModal = document.getElementById('generatedCardModal');
+        const closeGeneratedCardModal = document.querySelector('#generatedCardModal .modal-close');
+
+        if (generatedCardModal) {
+            const closeModal = () => generatedCardModal.classList.remove('is-open');
+
+            closeGeneratedCardModal?.addEventListener('click', closeModal);
+            generatedCardModal.addEventListener('click', (event) => {
+                if (event.target === generatedCardModal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        }
+
+        function promptAddCards(form, adminId) {
+            const quantity = prompt('How many card IDs would you like to generate and add?', '10');
+            if (quantity !== null && quantity.trim() !== '') {
+                const num = parseInt(quantity, 10);
+                if (isNaN(num) || num < 1) {
+                    alert('Please enter a valid number greater than 0');
+                    return;
+                }
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'quantity';
+                input.value = num;
+                form.appendChild(input);
+                form.submit();
+            }
+        }
+
+>>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
         const userSearchInput = document.getElementById('user_search');
         const userTableRows = Array.from(document.querySelectorAll('#users-table-body tr'));
         const clearSearchLink = document.querySelector('.user-search a');

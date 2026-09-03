@@ -9,6 +9,7 @@ use App\Models\ProfileLink;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -118,6 +119,71 @@ class AdminCardAndProfileManagementTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_corporate_card_order_requests_are_not_automatically_generated_and_are_notified_to_admins(): void
+    {
+        config(['app.admin_emails' => ['superadmin@example.com']]);
+
+        $buyer = User::factory()->create([
+            'is_corporate' => true,
+            'company_name' => 'Buyer Company',
+            'card_id' => null,
+            'email' => 'buyer@buyercompany.com',
+        ]);
+
+        Mail::fake();
+
+        $this->actingAs($buyer)
+            ->post(route('corporate.cards.order'), [
+                'name' => 'Sales team cards',
+                'quantity' => 10,
+            ])
+            ->assertRedirect(route('corporate.cards.index'));
+
+        $this->assertDatabaseCount('cards', 0);
+        Mail::assertSent(\App\Mail\CorporateCardOrderRequestMail::class, function ($mail) use ($buyer) {
+            return $mail->hasTo('superadmin@example.com')
+                && $mail->companyName === 'Buyer Company'
+                && $mail->companyEmail === 'buyer@buyercompany.com';
+        });
+    }
+
+    public function test_corporate_admin_can_deactivate_and_delete_owned_employee_accounts(): void
+    {
+        $buyer = User::factory()->create([
+            'is_corporate' => true,
+            'company_name' => 'Buyer Company',
+            'card_id' => null,
+            'is_active' => true,
+        ]);
+
+        $employee = User::factory()->create([
+            'name' => 'Ordered Employee',
+            'email' => 'employee@buyercompany.com',
+            'card_id' => 'CARD-OWNED-001',
+            'is_active' => true,
+        ]);
+
+        Cards::create([
+            'card_number' => $employee->card_id,
+            'name' => 'Buyer Company Card',
+            'purchaser_id' => $buyer->id,
+            'sort_order' => 1,
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('corporate.cards.employees.deactivate', $employee))
+            ->assertRedirect(route('corporate.cards.index'));
+
+        $employee->refresh();
+        $this->assertFalse($employee->is_active);
+
+        $this->actingAs($buyer)
+            ->delete(route('corporate.cards.employees.delete', $employee))
+            ->assertRedirect(route('corporate.cards.index'));
+
+        $this->assertDatabaseMissing('users', ['email' => 'employee@buyercompany.com']);
+    }
+
     /** @return array<string, string> */
     private function profilePayload(): array
     {
@@ -133,6 +199,106 @@ class AdminCardAndProfileManagementTest extends TestCase
             'accent_color' => '#654321',
             'display_name_font_size' => '24',
         ];
+    }
+
+    public function test_super_admin_can_register_corporate_account_with_default_password_and_assigned_cards(): void
+    {
+        config(['app.admin_emails' => ['superadmin@example.com']]);
+
+        $admin = User::factory()->create([
+            'name' => 'Super Admin',
+            'email' => 'superadmin@example.com',
+            'card_id' => 'ID-2026-000050',
+        ]);
+
+        $this->actingAs($admin);
+
+        $response = $this->post(route('admin.corporate-admins.store'), [
+            'name' => 'Corporate Admin',
+            'company_name' => 'Acme Corp',
+            'email' => 'corpadmin@acme.com',
+            'default_password' => 'Welcome123!',
+            'card_numbers' => ['ID-2026-000200', 'ID-2026-000201'],
+        ]);
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $this->assertDatabaseHas('users', [
+            'email' => 'corpadmin@acme.com',
+            'company_name' => 'Acme Corp',
+            'is_corporate' => true,
+        ]);
+
+        $corporateAdmin = User::where('email', 'corpadmin@acme.com')->firstOrFail();
+        $this->assertTrue(Hash::check('Welcome123!', $corporateAdmin->password));
+        $this->assertStringContainsString('ACME', strtoupper($corporateAdmin->card_id));
+        $this->assertTrue($corporateAdmin->cards()->where('card_number', $corporateAdmin->card_id)->exists());
+        $this->assertTrue($corporateAdmin->cards()->whereIn('card_number', ['ID-2026-000200', 'ID-2026-000201'])->count() > 0 || $corporateAdmin->cards()->count() >= 2);
+    }
+
+    public function test_corporate_admin_receives_company_card_id_and_cards_table_record_on_registration(): void
+    {
+        config(['app.admin_emails' => ['superadmin@example.com']]);
+
+        $admin = User::factory()->create([
+            'name' => 'Super Admin',
+            'email' => 'superadmin@example.com',
+            'card_id' => 'ID-2026-000050',
+        ]);
+
+        $this->actingAs($admin);
+
+        $response = $this->post(route('admin.corporate-admins.store'), [
+            'name' => 'Corporate Admin',
+            'company_name' => 'Acme Corp',
+            'email' => 'corpadmin@acme.com',
+            'default_password' => 'Welcome123!',
+            'card_count' => 2,
+        ]);
+
+        $response->assertRedirect(route('admin.dashboard'));
+
+        $corporateAdmin = User::where('email', 'corpadmin@acme.com')->firstOrFail();
+        $this->assertNotNull($corporateAdmin->card_id);
+        $this->assertDatabaseHas('cards', [
+            'purchaser_id' => $corporateAdmin->id,
+            'name' => 'Acme Corp',
+            'card_number' => $corporateAdmin->card_id,
+        ]);
+        $this->assertTrue($corporateAdmin->cards()->where('card_number', $corporateAdmin->card_id)->exists());
+    }
+
+    public function test_corporate_admin_can_reorder_cards_and_change_password(): void
+    {
+        $corporateAdmin = User::factory()->create([
+            'name' => 'Corporate Admin',
+            'email' => 'corp@acme.com',
+            'card_id' => null,
+            'is_corporate' => true,
+            'company_name' => 'Acme Corp',
+            'password' => Hash::make('Welcome123!'),
+        ]);
+
+        $firstCard = Cards::create(['card_number' => 'ID-2026-000300', 'name' => 'First Card', 'purchaser_id' => $corporateAdmin->id, 'sort_order' => 2]);
+        $secondCard = Cards::create(['card_number' => 'ID-2026-000301', 'name' => 'Second Card', 'purchaser_id' => $corporateAdmin->id, 'sort_order' => 1]);
+
+        $this->actingAs($corporateAdmin)
+            ->post(route('corporate.cards.reorder'), [
+                'card_ids' => [$secondCard->id, $firstCard->id],
+            ])
+            ->assertRedirect(route('corporate.cards.index'));
+
+        $this->assertSame([1, 2], $corporateAdmin->cards()->orderBy('sort_order')->pluck('sort_order')->all());
+
+        $this->actingAs($corporateAdmin)
+            ->post(route('profile.password.update'), [
+                'current_password' => 'Welcome123!',
+                'password' => 'NewStrongPass123!',
+                'password_confirmation' => 'NewStrongPass123!',
+            ])
+            ->assertRedirect(route('home'));
+
+        $corporateAdmin->refresh();
+        $this->assertTrue(Hash::check('NewStrongPass123!', $corporateAdmin->password));
     }
 
     public function test_registration_requires_a_generated_card_id_that_is_not_already_used(): void
@@ -153,6 +319,12 @@ class AdminCardAndProfileManagementTest extends TestCase
         $response->assertSessionHasErrors(['card_id']);
         $this->assertStringContainsString("doesn't exist", $response->getSession()->get('errors')->first('card_id'));
 
+        $existingUser = User::factory()->create([
+            'name' => 'Existing Card Holder',
+            'card_id' => 'ID-2026-000010',
+            'email' => 'existing-card-user@example.com',
+        ]);
+
         $response = $this->from('/register')->post(route('register.attempt'), [
             'name' => 'New Member',
             'card_id' => 'ID-2026-000010',
@@ -162,9 +334,10 @@ class AdminCardAndProfileManagementTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['card_id']);
-        $this->assertEquals(0, User::where('card_id', 'ID-2026-000010')->count());
-
+        $this->assertStringContainsString('has already been taken', $response->getSession()->get('errors')->first('card_id'));
+        $this->assertEquals(1, User::where('card_id', 'ID-2026-000010')->count());
         $this->assertDatabaseHas('cards', ['card_number' => 'ID-2026-000010']);
+        $this->assertDatabaseHas('users', ['email' => $existingUser->email, 'card_id' => 'ID-2026-000010']);
     }
 
     public function test_admin_can_generate_a_card_for_a_user_and_update_their_profile(): void

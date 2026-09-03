@@ -587,7 +587,7 @@
 </head>
 <body>
     @php
-        $publicCardUrl = route('profile.public', ['cardId' => $user->card_id]);
+        $publicCardUrl = $user->card_id ? route('profile.public', ['cardId' => $user->card_id]) : null;
         $selectedType = old('type', 'website');
         $selectedTypeMeta = $linkTypes[$selectedType] ?? reset($linkTypes);
         $groupedLinkTypes = collect($linkTypes)->groupBy('category', true);
@@ -605,8 +605,10 @@
                 @else
                     <a href="{{ route('home') }}">Home</a>
                 @endif
-                <span> | </span>
-                <a href="{{ $publicCardUrl }}" target="_blank">View Public Card</a>
+                @if ($publicCardUrl)
+                    <span> | </span>
+                    <a href="{{ $publicCardUrl }}" target="_blank">View Public Card</a>
+                @endif
             </div>
         </header>
 
@@ -708,10 +710,6 @@
                         <div>
                             <label for="text_color">Text Color</label>
                             <input id="text_color" type="color" name="text_color" value="{{ old('text_color', $profile->text_color) }}">
-                        </div>
-                        <div>
-                            <label for="accent_color">Accent Color</label>
-                            <input id="accent_color" type="color" name="accent_color" value="{{ old('accent_color', $profile->accent_color) }}">
                         </div>
                         <div>
                             <label for="card_style">Card Style</label>
@@ -843,6 +841,7 @@
                 </div>
             </div>
 
+            @if ($publicCardUrl)
             <div class="actions" style="margin-top: 14px; align-items: stretch;">
                 <div style="width:100%;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px;">
                     <h3 style="margin:0;">Scan Or Tap Access</h3>
@@ -859,6 +858,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </section>
 
             </div>
@@ -890,7 +890,6 @@
         const existingBadgeImagesInput = document.getElementById('existing_badge_images');
         const backgroundColorInput = document.getElementById('background_color');
         const textColorInput = document.getElementById('text_color');
-        const accentColorInput = document.getElementById('accent_color');
         const cardStyleInput = document.getElementById('card_style');
         const backgroundPatternInput = document.getElementById('background_pattern');
 
@@ -1049,12 +1048,16 @@
                 return;
             }
 
-            const fallback = backgroundPatternInput.value === 'solid'
-                ? backgroundColorInput.value
-                : `linear-gradient(140deg, ${backgroundColorInput.value}, ${accentColorInput.value})`;
+            const backgroundColor = backgroundColorInput?.value || '#111827';
+            const pattern = backgroundPatternInput?.value || 'gradient';
+            const fallback = pattern === 'solid'
+                ? `linear-gradient(${backgroundColor}, ${backgroundColor})`
+                : pattern === 'dots'
+                    ? `radial-gradient(circle, rgba(255,255,255,.28) 1px, transparent 1.5px), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`
+                    : `linear-gradient(140deg, rgba(255,255,255,.2), rgba(0,0,0,.25)), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`;
 
             previewCover.style.backgroundImage = fallback;
-            previewCover.style.backgroundSize = 'cover';
+            previewCover.style.backgroundSize = pattern === 'dots' ? '14px 14px, cover' : 'cover';
             previewCover.style.backgroundPosition = 'center';
             setAvatarPreviewMedia(coverImageUrl, asVideo);
         }
@@ -1078,6 +1081,18 @@
             } else {
                 previewCard.style.borderRadius = '16px';
             }
+
+            const textColor = textColorInput?.value || '#f9fafb';
+            const backgroundColor = backgroundColorInput?.value || '#111827';
+            previewCard.style.color = textColor;
+            previewCard.querySelectorAll('.preview-name, .preview-title, .preview-bio, .preview-link, .preview-badges-title').forEach((element) => {
+                element.style.color = textColor;
+            });
+            previewCard.querySelectorAll('.preview-link i').forEach((icon) => {
+                icon.style.backgroundColor = 'transparent';
+                icon.style.border = `2px solid ${backgroundColor}`;
+                icon.style.color = backgroundColor;
+            });
 
             const currentAvatar = avatarUrlInput?.value || '';
             updatePreviewBackground(currentAvatar, isVideoMedia(currentAvatar));
@@ -1355,13 +1370,14 @@
         renderImageAlbum(logoPreviewAlbum, [logoUrlInput?.value || ''].filter(Boolean));
         setAvatarPreviewMedia(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
 
-        [backgroundColorInput, textColorInput, accentColorInput, cardStyleInput, backgroundPatternInput, layoutStyleInput].forEach((input) => {
+        [backgroundColorInput, textColorInput, cardStyleInput, backgroundPatternInput, layoutStyleInput].forEach((input) => {
             input?.addEventListener('input', updatePreviewStyling);
             input?.addEventListener('change', updatePreviewStyling);
         });
 
         setPreviewLogo(logoUrlInput?.value || '');
         updatePreviewBackground(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
+        updatePreviewStyling();
     </script>
 </body>
 </html>
