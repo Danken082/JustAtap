@@ -26,28 +26,15 @@ class ProfileController extends Controller
             'instagram' => ['label' => 'Instagram', 'icon' => 'bi-instagram', 'category' => 'Social', 'placeholder' => 'instagram.com/username', 'value_type' => 'url'],
             'snapchat' => ['label' => 'Snapchat', 'icon' => 'bi-snapchat', 'category' => 'Social', 'placeholder' => 'snapchat.com/add/username', 'value_type' => 'url'],
             'linkedin' => ['label' => 'LinkedIn', 'icon' => 'bi-linkedin', 'category' => 'Social', 'placeholder' => 'linkedin.com/in/username', 'value_type' => 'url'],
-            'pinterest' => ['label' => 'Pinterest', 'icon' => 'bi-pinterest', 'category' => 'Social', 'placeholder' => 'pinterest.com/username', 'value_type' => 'url'],
             'threads' => ['label' => 'Threads', 'icon' => 'bi-threads', 'category' => 'Social', 'placeholder' => 'threads.net/@username', 'value_type' => 'url'],
             'tiktok' => ['label' => 'TikTok', 'icon' => 'bi-tiktok', 'category' => 'Social', 'placeholder' => 'tiktok.com/@username', 'value_type' => 'url'],
-            'whatsapp' => ['label' => 'WhatsApp', 'icon' => 'bi-whatsapp', 'category' => 'Communication', 'placeholder' => '+639171234567 or wa.me/number', 'value_type' => 'phone_or_url'],
+            'whatsapp' => ['label' => 'WhatsApp', 'icon' => 'bi-whatsapp', 'category' => 'Communication', 'placeholder' => 'wa.me/qr/invite-code', 'value_type' => 'phone_or_url'],
             'telegram' => ['label' => 'Telegram', 'icon' => 'bi-telegram', 'category' => 'Communication', 'placeholder' => 't.me/username', 'value_type' => 'url'],
             'discord' => ['label' => 'Discord', 'icon' => 'bi-discord', 'category' => 'Communication', 'placeholder' => 'discord.gg/invite-code', 'value_type' => 'url'],
             'email' => ['label' => 'Email', 'icon' => 'bi-envelope-fill', 'category' => 'Communication', 'placeholder' => 'you@example.com', 'value_type' => 'email'],
             'phone' => ['label' => 'Phone', 'icon' => 'bi-telephone-fill', 'category' => 'Communication', 'placeholder' => '+639171234567', 'value_type' => 'phone'],
             'viber' => ['label' => 'Viber', 'icon' => 'bi-telephone-fill', 'category' => 'Communication', 'placeholder' => '+639171234567', 'value_type' => 'viber'],
-            'zoom' => ['label' => 'Zoom', 'icon' => 'bi-camera-video-fill', 'category' => 'Conferencing', 'placeholder' => 'zoom.us/j/meeting-id', 'value_type' => 'url'],
-            'teams' => ['label' => 'Teams', 'icon' => 'bi-microsoft-teams', 'category' => 'Conferencing', 'placeholder' => 'teams.microsoft.com/l/meetup-join/...', 'value_type' => 'url'],
-            'google_meet' => ['label' => 'Meet', 'icon' => 'bi-camera-video', 'category' => 'Conferencing', 'placeholder' => 'meet.google.com/abc-defg-hij', 'value_type' => 'url'],
-            'skype' => ['label' => 'Skype', 'icon' => 'bi-skype', 'category' => 'Conferencing', 'placeholder' => 'join.skype.com/...', 'value_type' => 'url'],
-            'paypal' => ['label' => 'PayPal', 'icon' => 'bi-paypal', 'category' => 'Payment', 'placeholder' => 'paypal.me/username', 'value_type' => 'url'],
-            'cashapp' => ['label' => 'Cash App', 'icon' => 'bi-cash-stack', 'category' => 'Payment', 'placeholder' => 'cash.app/$username', 'value_type' => 'url'],
             'youtube' => ['label' => 'YouTube', 'icon' => 'bi-youtube', 'category' => 'Video', 'placeholder' => 'youtube.com/@channel', 'value_type' => 'url'],
-            'vimeo' => ['label' => 'Vimeo', 'icon' => 'bi-vimeo', 'category' => 'Video', 'placeholder' => 'vimeo.com/username', 'value_type' => 'url'],
-            'twitch' => ['label' => 'Twitch', 'icon' => 'bi-twitch', 'category' => 'Video', 'placeholder' => 'twitch.tv/username', 'value_type' => 'url'],
-            'spotify' => ['label' => 'Spotify', 'icon' => 'bi-spotify', 'category' => 'Music', 'placeholder' => 'open.spotify.com/user/username', 'value_type' => 'url'],
-            'soundcloud' => ['label' => 'SoundCloud', 'icon' => 'bi-cloud', 'category' => 'Music', 'placeholder' => 'soundcloud.com/username', 'value_type' => 'url'],
-            'behance' => ['label' => 'Behance', 'icon' => 'bi-behance', 'category' => 'Design', 'placeholder' => 'behance.net/username', 'value_type' => 'url'],
-            'dribbble' => ['label' => 'Dribbble', 'icon' => 'bi-dribbble', 'category' => 'Design', 'placeholder' => 'dribbble.com/username', 'value_type' => 'url'],
             'github' => ['label' => 'GitHub', 'icon' => 'bi-github', 'category' => 'Other', 'placeholder' => 'github.com/username', 'value_type' => 'url'],
             'website' => ['label' => 'Website', 'icon' => 'bi-globe2', 'category' => 'Other', 'placeholder' => 'yourdomain.com', 'value_type' => 'url'],
             'address' => ['label' => 'Address', 'icon' => 'bi-geo-alt-fill', 'category' => 'Other', 'placeholder' => 'Business address or map URL', 'value_type' => 'address'],
@@ -64,12 +51,45 @@ class ProfileController extends Controller
         $metadata = $this->linkTypes()[$type] ?? null;
         $valueType = $metadata['value_type'] ?? 'url';
 
-        if ($valueType === 'email' && ! str_starts_with(strtolower($value), 'mailto:')) {
-            return 'mailto:'.$value;
+        if ($valueType === 'email') {
+            $email = preg_replace('/^mailto:/i', '', $value) ?? $value;
+
+            return 'https://mail.google.com/mail/?view=cm&fs=1&to='.rawurlencode($email).'&su=SUBJECT&body=YOUR%20MESSAGE';
+        }
+
+        if ($type === 'telegram') {
+            $username = preg_replace('/^https?:\/\/(www\.)?t\.me\//i', '', $value) ?? $value;
+            $username = ltrim(trim($username), '@/');
+
+            return 'https://t.me/'.$username;
+        }
+
+        if ($type === 'tiktok') {
+            $username = preg_replace('/^https?:\/\/(www\.)?tiktok\.com\//i', '', $value) ?? $value;
+            $username = ltrim(trim($username), '@/');
+
+            return 'https://tiktok.com/@'.$username;
+        }
+
+        if ($type === 'snapchat') {
+            $username = preg_replace('/^https?:\/\/(www\.)?snapchat\.com\/add\//i', '', $value) ?? $value;
+            $username = ltrim(trim($username), '@/');
+
+            return 'https://snapchat.com/add/'.$username;
         }
 
         if ($valueType === 'phone' && ! str_starts_with(strtolower($value), 'tel:')) {
             return 'tel:'.$value;
+        }
+
+        if ($valueType === 'viber') {
+            if (str_starts_with(strtolower($value), 'viber://chat?number=')) {
+                return $value;
+            }
+
+            $number = preg_replace('/[^0-9+]/', '', $value) ?? '';
+
+            return 'viber://chat?number='.rawurlencode($number);
         }
 
         if ($valueType === 'phone_or_url') {
@@ -104,7 +124,7 @@ class ProfileController extends Controller
             'title' => 'Digital Profile',
             'bio' => 'Edit your profile from the dashboard.',
             'background_color' => '#111827',
-            'text_color' => '#f9fafb',
+            'text_color' => '#000000',
             'accent_color' => '#60a5fa',
             'card_style' => 'glass',
             'background_pattern' => 'gradient',
@@ -320,7 +340,12 @@ class ProfileController extends Controller
             $validator = Validator::make($entry, [
                 'type' => ['required', Rule::in($allowedTypes)],
                 'label' => ['required', 'string', 'max:100'],
-                'value' => ['required', 'string', 'max:255'],
+                'value' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    ...(($entry['type'] ?? null) === 'email' ? ['email'] : []),
+                ],
             ]);
 
             if ($validator->fails()) {

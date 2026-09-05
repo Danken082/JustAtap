@@ -88,11 +88,11 @@
             border-radius: 50%;
         }
 
-<<<<<<< HEAD
         ::selection {
             background: rgba(255, 255, 255, 0.25);
             color: #000;
-=======
+    }
+
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -161,7 +161,7 @@
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 14px;
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
+        }
         }
 
         /* ── Glass utilities ── */
@@ -378,6 +378,100 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        .corporate-orders {
+            margin-top: 1.5rem;
+        }
+        .corporate-orders-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .corporate-orders-kicker {
+            margin: 0 0 0.35rem;
+            color: rgba(255,255,255,0.3);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+        .corporate-orders-title {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin: 0;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        .corporate-orders-title i { color: rgba(255,255,255,0.45); }
+        .corporate-orders-subtitle {
+            margin: 0.4rem 0 0;
+            color: rgba(255,255,255,0.38);
+            font-size: 0.78rem;
+        }
+        .corporate-orders .table-wrap {
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 0.9rem;
+            background: rgba(0,0,0,0.12);
+        }
+        .corporate-orders table { min-width: 980px; }
+        .corporate-orders .table-wrap th { padding: 0.8rem 0.75rem; }
+        .corporate-orders .table-wrap td { padding: 0.85rem 0.75rem; color: rgba(255,255,255,0.65); }
+        .corporate-orders .table-wrap tbody tr:last-child td { border-bottom: 0; }
+        .corporate-admin-name { color: #fff; font-weight: 700; }
+        .corporate-admin-email { color: rgba(255,255,255,0.42); font-size: 0.78rem; }
+        .corporate-card-count {
+            display: inline-grid;
+            min-width: 2rem;
+            height: 2rem;
+            place-items: center;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 0.65rem;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            font-weight: 700;
+        }
+        .corporate-card-details summary {
+            color: rgba(255,255,255,0.72);
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .corporate-card-list {
+            max-height: 150px;
+            margin-top: 0.6rem;
+            padding: 0.55rem 0.7rem;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 0.65rem;
+            background: rgba(255,255,255,0.035);
+            color: rgba(255,255,255,0.55);
+            font-family: monospace;
+            font-size: 0.72rem;
+        }
+        .corporate-card-list div + div { margin-top: 0.3rem; }
+        .corporate-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .corporate-action {
+            padding: 0.38rem 0.7rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 999px;
+            background: transparent;
+            color: rgba(255,255,255,0.62);
+            font-size: 0.68rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .corporate-action:hover { border-color: rgba(255,255,255,0.28); color: #fff; background: rgba(255,255,255,0.05); }
+        .corporate-action.primary { background: #fff; border-color: #fff; color: #09090b; }
+        .corporate-action.primary:hover { background: rgba(255,255,255,0.85); color: #09090b; }
+        .corporate-action.danger { color: rgba(255,160,160,0.75); border-color: rgba(255,100,100,0.2); }
+        .corporate-empty { padding: 3rem 1rem !important; text-align: center; color: rgba(255,255,255,0.35) !important; }
+
         /* ── Checkbox ── */
         .checkbox-dark {
             width: 16px;
@@ -580,26 +674,7 @@
         }
     </style>
 </head>
-<<<<<<< HEAD
 <body class="font-sans antialiased">
-=======
-<body>
-    <main class="wrap">
-        <header class="top">
-            <h1>Admin Dashboard</h1>
-            <div>
-                <a href="{{ route('admin.cards.index') }}">Card Studio</a>
-                <span>|</span>
-                <a href="{{ route('admin.corporate-admins.create') }}">Register Corporate Admin</a>
-                <span>|</span>
-                <a href="{{ route('admin.products.index') }}">Products</a>
-                <span>|</span>
-                <a href="{{ route('home') }}">Home</a>
-                <span>|</span>
-                <a href="{{ route('shop.index') }}">Shop</a>
-            </div>
-        </header>
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
 
     <!-- ============================================================ -->
     <!--  STICKY HEADER                                               -->
@@ -622,6 +697,8 @@
                     <a href="{{ route('admin.cards.index') }}" class="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-white/35 transition hover:text-white hover:bg-white/5">Card Studio</a>
                     <a href="{{ route('admin.products.index') }}" class="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-white/35 transition hover:text-white hover:bg-white/5">Products</a>
                     <a href="{{ route('shop.index') }}" class="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-white/35 transition hover:text-white hover:bg-white/5">Shop</a>
+                    
+                    <a href="{{ route('admin.corporate-admins.create') }}" class="inline-flex items-center gap-2 rounded-full border border-transparent px-4 py-2 text-white/35 transition hover:text-white hover:bg-white/5"><i class="bi bi-person-plus"></i> Create Corporate Account</a>
                 </nav>
 
                 <!-- Right: mobile toggle -->
@@ -641,6 +718,9 @@
                     <a href="{{ route('admin.cards.index') }}" class="flex items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-white/40 transition hover:text-white hover:bg-white/5">
                         Card Studio
                     </a>
+                    <a href="{{ route('admin.corporate-admins.create') }}" class="flex items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-white/40 transition hover:text-white hover:bg-white/5">
+                        <i class="bi bi-person-plus"></i> Create Corporate Account
+                    </a>
                     <a href="{{ route('admin.products.index') }}" class="flex items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-white/40 transition hover:text-white hover:bg-white/5">
                         Products
                     </a>
@@ -659,12 +739,10 @@
 
         <!-- Alert -->
         @if (session('success'))
-<<<<<<< HEAD
             <div class="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-sm text-white/80 backdrop-blur-sm animate-fade-in">
                 <i class="bi bi-check-circle-fill text-white/60 text-base"></i>
                 {{ session('success') }}
             </div>
-=======
             <div class="modal-overlay is-open" id="generatedCardModal" role="dialog" aria-modal="true" aria-labelledby="generatedCardTitle">
                 <div class="modal-card">
                     <button class="modal-close" type="button" aria-label="Close modal">×</button>
@@ -695,7 +773,6 @@
                     </div>
                 @endforeach
             </section>
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
         @endif
 
         <!-- Stats -->
@@ -798,19 +875,14 @@
                             @forelse ($users as $user)
                                 <tr>
                                     <td>
-                                        <input type="checkbox" name="user_ids[]" value="{{ $user->id }}" class="checkbox-dark user-qr-checkbox">
+                                        <input type="checkbox" name="user_ids[]" value="{{ $user->id }}" form="bulk-qr-form" class="checkbox-dark user-qr-checkbox">
                                     </td>
                                     <td class="font-medium text-white/90">{{ $user->name }}</td>
                                     <td class="text-white/50 text-sm">{{ $user->email }}</td>
                                     <td><span class="text-white/30 font-mono text-xs">{{ $user->card_id }}</span></td>
                                     <td>
-<<<<<<< HEAD
-                                        @if ($user->profile)
-                                            <a href="{{ route('profile.public', ['cardId' => $user->card_id]) }}" target="_blank" rel="noopener" class="text-white/60 hover:text-white text-sm transition">Public Card</a>
-=======
                                         @if ($user->profile && $user->card_id)
-                                            <a href="{{ route('profile.public', ['cardId' => $user->card_id]) }}" target="_blank" rel="noopener">Public Card</a>
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
+                                            <a href="{{ route('profile.public', ['cardId' => $user->card_id]) }}" target="_blank" rel="noopener" class="text-white/60 hover:text-white text-sm transition">Public Card</a>
                                         @else
                                             <span class="text-white/20 text-sm">—</span>
                                         @endif
@@ -818,16 +890,16 @@
                                     <td>
                                         <div class="flex flex-wrap gap-1">
                                             <a class="btn-outline text-xs px-2 py-0.5" href="{{ route('admin.users.profile.edit', $user) }}"><i class="bi bi-pencil"></i></a>
-                                            <form method="POST" action="{{ route('admin.users.profile-builder.toggle', $user) }}" class="inline">
+                                            <form method="POST" action="{{ route('admin.users.profile-builder.toggle', $user) }}" onsubmit="return confirm('{{ $user->profile?->profile_builder_active === false ? 'Activate this user profile?' : 'Deactivate this user profile? The public profile will no longer be active.' }}');" class="inline">
                                                 @csrf
                                                 <button class="btn-outline text-xs px-2 py-0.5" type="submit">{{ $user->profile?->profile_builder_active === false ? 'Activate' : 'Deactivate' }}</button>
                                             </form>
-                                            <form method="POST" action="{{ route('admin.users.duplicate', $user) }}" class="inline">
+                                            <form method="POST" action="{{ route('admin.users.duplicate', $user) }}" onsubmit="return confirm('Duplicate this user and create a new card ID and profile copy?');" class="inline">
                                                 @csrf
                                                 <button class="btn-outline text-xs px-2 py-0.5" type="submit"><i class="bi bi-copy"></i></button>
                                             </form>
                                             @if (auth()->id() !== $user->id)
-                                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user and their profile? This cannot be undone.');" class="inline">
+                                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Warning: delete this user and their profile? This cannot be undone.');" class="inline">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button class="btn-danger text-xs px-2 py-0.5" type="submit"><i class="bi bi-trash3"></i></button>
@@ -905,33 +977,11 @@
                     <tbody>
                         @forelse ($latestLinks as $link)
                             <tr>
-<<<<<<< HEAD
                                 <td><span class="text-white/50 text-sm">{{ $link->type }}</span></td>
                                 <td class="font-medium text-white/90">{{ $link->label }}</td>
                                 <td class="text-white/40 text-sm break-all max-w-[200px]">{{ $link->value }}</td>
                                 <td class="text-white/50 text-sm">{{ $link->profile?->user?->email ?? 'n/a' }}</td>
                                 <td class="text-white/20 text-xs">{{ $link->created_at?->format('Y-m-d H:i') }}</td>
-=======
-                                <td>{{ $profile->display_name ?: 'Unnamed' }}</td>
-                                <td>{{ $profile->user?->email ?? 'n/a' }}</td>
-                                <td>
-                                    <span class="pill">{{ $profile->card_style }}</span>
-                                    <span class="pill">{{ $profile->background_pattern }}</span>
-                                </td>
-                                <td>{{ $profile->links_count }}</td>
-                                <td>
-                                    @if ($profile->user && $profile->user->card_id)
-                                        <select class="profile-qr-select" data-open-url="{{ route('profile.public', ['cardId' => $profile->user->card_id]) }}" data-qr-download-url="{{ route('admin.users.profile.qr.download', $profile->user) }}">
-                                            <option value="">Choose action</option>
-                                            <option value="download">Download QR</option>
-                                            <option value="open">Open profile</option>
-                                        </select>
-                                    @else
-                                        <span class="muted">n/a</span>
-                                    @endif
-                                    
-                                </td>
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
                             </tr>
                         @empty
                             <tr>
@@ -988,8 +1038,16 @@
             @endif
         </section>
 
-        <section class="panel" style="margin-top:12px;">
-            <h2>Corporate Card Orders</h2>
+        <section class="glass glow-ring rounded-2xl border border-white/5 p-5 shadow-2xl shadow-black/30 corporate-orders">
+            <div class="corporate-orders-header">
+                <div>
+                    <p class="corporate-orders-kicker">Organization management</p>
+                    <h2 class="corporate-orders-title"><i class="bi bi-building"></i> Corporate Card Orders</h2>
+                    <p class="corporate-orders-subtitle">Manage corporate accounts, card allocations, and access status.</p>
+                </div>
+                <a href="{{ route('admin.corporate-admins.create') }}" class="btn-accent"><i class="bi bi-person-plus"></i> New account</a>
+            </div>
+            <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -1006,18 +1064,18 @@
                 <tbody>
                     @forelse ($corporateAdmins as $admin)
                         <tr>
-                            <td><strong>{{ $admin->name }}</strong></td>
+                            <td><span class="corporate-admin-name">{{ $admin->name }}</span></td>
                             <td>{{ $admin->company_name }}</td>
-                            <td>{{ $admin->email }}</td>
-                            <td style="text-align:center; font-weight:700;">{{ $admin->cards_count }}</td>
+                            <td><span class="corporate-admin-email">{{ $admin->email }}</span></td>
+                            <td style="text-align:center;"><span class="corporate-card-count">{{ $admin->cards_count }}</span></td>
                             <td style="max-width:400px;">
-                                <details style="cursor:pointer;">
-                                    <summary style="color:#ffd6b5; user-select:none;">View {{ $admin->cards_count }} ID{{ $admin->cards_count !== 1 ? 's' : '' }}</summary>
-                                    <div style="margin-top:8px; padding:8px; background:rgba(255,255,255,0.05); border-radius:6px; max-height:200px; overflow-y:auto;">
+                                <details class="corporate-card-details">
+                                    <summary>View {{ $admin->cards_count }} ID{{ $admin->cards_count !== 1 ? 's' : '' }}</summary>
+                                    <div class="corporate-card-list">
                                         @forelse ($admin->cards as $card)
-                                            <div style="padding:4px 0; font-family:monospace; font-size:0.85rem; color:#d4e0fb;">{{ $card->card_number }}</div>
+                                            <div>{{ $card->card_number }}</div>
                                         @empty
-                                            <p class="muted">No cards assigned</p>
+                                            <div>No cards assigned</div>
                                         @endforelse
                                     </div>
                                 </details>
@@ -1030,19 +1088,19 @@
                                 @endif
                             </td>
                             <td>
-                                <div class="actions">
+                                <div class="corporate-actions">
                                     <form method="POST" action="{{ route('admin.corporate-admins.add-cards', $admin->id) }}" style="display:inline;">
                                         @csrf
-                                        <button class="action primary" type="button" onclick="promptAddCards(this.form, {{ $admin->id }})">Add Cards</button>
+                                        <button class="corporate-action primary" type="button" onclick="promptAddCards(this.form, {{ $admin->id }})">Add cards</button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.corporate-admins.toggle', $admin->id) }}" style="display:inline;">
                                         @csrf
-                                        <button class="action" type="submit">{{ $admin->is_active ? 'Deactivate' : 'Activate' }}</button>
+                                        <button class="corporate-action" type="submit">{{ $admin->is_active ? 'Deactivate' : 'Activate' }}</button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.corporate-admins.destroy', $admin->id) }}" onsubmit="return confirm('Delete {{ $admin->name }} and all their card data? This cannot be undone.');" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="action danger" type="submit">Delete</button>
+                                        <button class="corporate-action danger" type="submit">Delete</button>
                                     </form>
                                 </div>
                             </td>
@@ -1050,11 +1108,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="muted">No corporate admins registered yet.</td>
+                            <td colspan="8" class="corporate-empty"><i class="bi bi-building text-2xl"></i><br>No corporate admins registered yet.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </section>
     </main>
 
@@ -1062,9 +1121,6 @@
     <!--  JAVASCRIPT  (preserved – all backend logic intact)         -->
     <!-- ============================================================ -->
     <script>
-<<<<<<< HEAD
-        // ─── Search filter ──────────────────────────────────────────
-=======
         const generatedCardModal = document.getElementById('generatedCardModal');
         const closeGeneratedCardModal = document.querySelector('#generatedCardModal .modal-close');
 
@@ -1102,7 +1158,7 @@
             }
         }
 
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
+            // ─── Search filter ──────────────────────────────────────────
         const userSearchInput = document.getElementById('user_search');
         const userTableRows = Array.from(document.querySelectorAll('#users-table-body tr'));
         const clearSearchLink = document.querySelector('.user-search a');

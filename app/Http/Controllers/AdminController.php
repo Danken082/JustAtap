@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use ZipArchive;
 
@@ -338,17 +339,11 @@ class AdminController extends Controller
 
     private function generateCardNumber(): string
     {
-        $next = 1;
+        do {
+            $candidate = 'CARD-'.strtoupper(Str::random(12));
+        } while (User::where('card_id', $candidate)->exists() || Cards::where('card_number', $candidate)->exists());
 
-        while (true) {
-            $candidate = 'ID-'.date('Y').'-'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
-
-            if (! User::where('card_id', $candidate)->exists() && ! \App\Models\Cards::where('card_number', $candidate)->exists()) {
-                return $candidate;
-            }
-
-            $next++;
-        }
+        return $candidate;
     }
 
     private function uniqueDuplicateEmail(string $email): string

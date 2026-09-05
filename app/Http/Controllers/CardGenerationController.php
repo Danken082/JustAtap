@@ -30,7 +30,7 @@ class CardGenerationController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'user_id' => ['required', 'exists:users,id'],
+            'user_id' => ['nullable', 'exists:users,id'],
         ]);
 
         $cardNumber = $this->generateCardNumber();
@@ -40,11 +40,13 @@ class CardGenerationController extends Controller
             'name' => $validated['name'],
         ]);
 
-        $user = User::findOrFail($validated['user_id']);
-        $user->update(['card_id' => $cardNumber]);
+        if (! empty($validated['user_id'])) {
+            $user = User::findOrFail($validated['user_id']);
+            $user->update(['card_id' => $cardNumber]);
+        }
 
-        return redirect()->route('admin.cards.index', ['user_id' => $user->id])
-            ->with('success', 'Card generated and assigned successfully.');
+        return redirect()->route('admin.cards.index')
+            ->with('success', 'Card generated successfully.');
     }
 
     public function update(Request $request, Card $card)

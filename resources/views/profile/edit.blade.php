@@ -1085,7 +1085,7 @@
                         <h2 class="font-display text-lg font-bold text-white mb-1">Design &amp; Info</h2>
                         <p class="text-sm text-white/40 mb-4">Customize your digital profile card and virtual contact details.</p>
 
-                        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" id="profile-design-form" novalidate>
                             @csrf
 
                             <!-- ===== SECTION: Identity ===== -->
@@ -1127,7 +1127,7 @@
 
                             <!-- ===== SECTION: Layout ===== -->
                             <div class="form-section-title mt-5">Layout &amp; Style</div>
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
                                 <div class="field-group">
                                     <div class="label-wrap">
@@ -1142,66 +1142,11 @@
                                     </select>
                                 </div>
 
-<<<<<<< HEAD
                                 <div class="field-group">
                                     <div class="label-wrap">
                                         <i class="bi bi-window"></i>
                                         <label for="card_style">Card Style</label>
                                     </div>
-=======
-                                    <div id="avatar_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 12px;"></div>
-
-                                    @if ($profile->avatar_url)
-                                        <div class="avatar-control">
-                                            @php $isAvatarVideo = preg_match('/\.(mp4|webm|mov|m4v|avi|quicktime)(\?.*)?$/i', (string) $profile->avatar_url); @endphp
-                                            @if ($isAvatarVideo)
-                                                <video controls preload="metadata" style="width:100%;max-height:220px;border-radius:10px;background:#0f172a;">
-                                                    <source src="{{ $profile->avatar_url }}">
-                                                </video>
-                                            @else
-                                                <img src="{{ $profile->avatar_url }}" alt="Current profile picture">
-                                            @endif
-                                            <label style="display:flex;align-items:center;gap:8px;margin:0;">
-                                                <input type="checkbox" name="remove_avatar" value="1" style="width:auto;">
-                                                Remove current profile picture
-                                            </label>
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="full">
-                                    <input type="hidden" id="logo_url" name="logo_url" value="{{ $profile->logo_url ?? '' }}">
-                                    <label for="logo_image">Logo Image Upload (optional)</label>
-                                    <input id="logo_image" type="file" name="logo_image" accept="image/png,image/jpeg,image/webp,image/gif">
-                                    <div id="logo_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 12px;"></div>
-
-                                    @if ($profile->logo_url)
-                                        <div class="avatar-control" style="margin-top:12px;">
-                                            <img src="{{ $profile->logo_url }}" alt="Current logo image">
-                                            <label style="display:flex;align-items:center;gap:8px;margin:0;">
-                                                <input type="checkbox" name="remove_logo" value="1" style="width:auto;">
-                                                Remove current logo
-                                            </label>
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="full">
-                                    <label for="badge_images">Badge / Achievement Images (max 10)</label>
-                                    <input type="hidden" name="existing_badge_images" id="existing_badge_images" value='{{ json_encode($profile->badge_images ?? []) }}'>
-                                    <input id="badge_images" type="file" name="badge_images[]" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-                                    <p class="small">Upload new badge images to add them to the album. Remove existing badges using the remove button below.</p>
-                                    <div id="badge_preview_album" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 10px; margin-top: 12px;"></div>
-                                </div>
-                                <div>
-                                    <label for="background_color">Background Color</label>
-                                    <input id="background_color" type="color" name="background_color" value="{{ old('background_color', $profile->background_color) }}">
-                                </div>
-                                <div>
-                                    <label for="text_color">Text Color</label>
-                                    <input id="text_color" type="color" name="text_color" value="{{ old('text_color', $profile->text_color) }}">
-                                </div>
-                                <div>
-                                    <label for="card_style">Card Style</label>
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
                                     <select id="card_style" name="card_style">
                                         <option value="glass" @selected(old('card_style', $profile->card_style) === 'glass')>Glass</option>
                                         <option value="clean" @selected(old('card_style', $profile->card_style) === 'clean')>Clean</option>
@@ -1248,16 +1193,6 @@
                                     </div>
                                 </div>
 
-                                <div class="field-group">
-                                    <div class="label-wrap">
-                                        <i class="bi bi-palette"></i>
-                                        <label>Accent</label>
-                                    </div>
-                                    <div class="color-picker-wrap">
-                                        <input id="accent_color" type="color" name="accent_color" value="{{ old('accent_color', $profile->accent_color) }}">
-                                        <span class="color-label">{{ $profile->accent_color ?? '#4a6cf7' }}</span>
-                                    </div>
-                                </div>
                             </div>
 
                             <!-- ===== SECTION: Media ===== -->
@@ -1325,11 +1260,22 @@
                                     <label for="badge_images">Badges (max 10)</label>
                                 </div>
                                 <div class="file-upload-wrap">
-                                    <input id="badge_images" type="file" name="badge_images[]" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+                            <input
+                        id="badge_images"
+                        type="file"
+                        name="badge_images[]"
+                        accept="image/*"
+                        multiple
+                    >
                                     <span class="file-hint">Upload multiple</span>
                                 </div>
                                 <input type="hidden" name="existing_badge_images" id="existing_badge_images" value='{{ json_encode($profile->badge_images ?? []) }}'>
                                 <div id="badge_preview_album" class="media-preview-grid"></div>
+                            </div>
+
+                            <div id="profile-form-errors" class="mt-5 hidden rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="alert" aria-live="polite">
+                                <p class="font-semibold">Please fix the following:</p>
+                                <ul class="mt-1 list-disc pl-5"></ul>
                             </div>
 
                             <!-- Submit -->
@@ -1490,37 +1436,7 @@
         </div>
     </section>
 
-<<<<<<< HEAD
 </main>
-=======
-    <script>
-        const linkTypeInput = document.getElementById('type');
-        const labelInput = document.getElementById('label');
-        const valueInput = document.getElementById('value');
-        const iconChoices = document.querySelectorAll('[data-link-choice]');
-        const copyCardUrlButton = document.getElementById('copy_card_url');
-        const publicCardUrlInput = document.getElementById('public_card_url');
-        const displayNameInput = document.getElementById('display_name');
-        const titleInput = document.getElementById('title');
-        const bioInput = document.getElementById('bio');
-        const avatarUrlInput = document.getElementById('avatar_url');
-        const avatarOffsetXInput = document.getElementById('avatar_offset_x');
-        const avatarOffsetYInput = document.getElementById('avatar_offset_y');
-        const avatarImageInput = document.getElementById('avatar_image');
-        const avatarPreviewAlbum = document.getElementById('avatar_preview_album');
-        const logoUrlInput = document.getElementById('logo_url');
-        const logoImageInput = document.getElementById('logo_image');
-        const logoPreviewAlbum = document.getElementById('logo_preview_album');
-        const displayNameFontSizeInput = document.getElementById('display_name_font_size');
-        const layoutStyleInput = document.getElementById('layout_style');
-        const badgeImagesInput = document.getElementById('badge_images');
-        const badgePreviewAlbum = document.getElementById('badge_preview_album');
-        const existingBadgeImagesInput = document.getElementById('existing_badge_images');
-        const backgroundColorInput = document.getElementById('background_color');
-        const textColorInput = document.getElementById('text_color');
-        const cardStyleInput = document.getElementById('card_style');
-        const backgroundPatternInput = document.getElementById('background_pattern');
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
 
 <!-- ============================================================ -->
 <!--  JAVASCRIPT  (preserved + enhanced)                         -->
@@ -1585,9 +1501,10 @@
     const existingBadgeImagesInput = document.getElementById('existing_badge_images');
     const backgroundColorInput = document.getElementById('background_color');
     const textColorInput = document.getElementById('text_color');
-    const accentColorInput = document.getElementById('accent_color');
     const cardStyleInput = document.getElementById('card_style');
     const backgroundPatternInput = document.getElementById('background_pattern');
+    const profileDesignForm = document.getElementById('profile-design-form');
+    const profileFormErrors = document.getElementById('profile-form-errors');
 
     const emptyImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
@@ -1595,6 +1512,70 @@
     function updateAllPreviewElements(updateFn) {
         document.querySelectorAll('.preview').forEach(updateFn);
     }
+
+    function validateProfileDesignForm() {
+        if (!profileDesignForm) return [];
+
+        const errors = [];
+        const avatarFile = avatarImageInput?.files?.[0];
+        const logoFile = logoImageInput?.files?.[0];
+        const badgeFiles = Array.from(badgeImagesInput?.files || []);
+        const avatarExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'm4v', 'webm', 'avi'];
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        const getExtension = (file) => file.name.split('.').pop()?.toLowerCase() || '';
+
+        profileDesignForm.querySelectorAll('input, select, textarea').forEach((input) => {
+            if (!input.checkValidity()) {
+                const label = input.labels?.[0]?.textContent?.trim() || 'This field';
+                errors.push(`${label}: ${input.validationMessage}`);
+            }
+        });
+
+        if (avatarFile) {
+            if (!avatarExtensions.includes(getExtension(avatarFile))) {
+                errors.push('The avatar image must be a JPG, JPEG, PNG, WEBP, GIF, MP4, MOV, M4V, WEBM, or AVI file.');
+            }
+            if (avatarFile.size > 4 * 1024 * 1024) {
+                errors.push('The avatar file must be 4 MB or smaller.');
+            }
+        }
+
+        if (logoFile) {
+            if (!imageExtensions.includes(getExtension(logoFile))) {
+                errors.push('The logo must be a JPG, JPEG, PNG, WEBP, or GIF file.');
+            }
+            if (logoFile.size > 4 * 1024 * 1024) {
+                errors.push('The logo file must be 4 MB or smaller.');
+            }
+        }
+
+        if (badgeFiles.length > 10) {
+            errors.push('You can upload a maximum of 10 badge images.');
+        }
+        if (badgeFiles.some((file) => !imageExtensions.includes(getExtension(file)))) {
+            errors.push('Badge images must be JPG, JPEG, PNG, WEBP, or GIF files.');
+        }
+
+        return [...new Set(errors)];
+    }
+
+    function showProfileFormErrors(errors) {
+        if (!profileFormErrors) return;
+        const list = profileFormErrors.querySelector('ul');
+        if (!list) return;
+        list.innerHTML = errors.map((error) => `<li>${error}</li>`).join('');
+        profileFormErrors.classList.toggle('hidden', errors.length === 0);
+    }
+
+    profileDesignForm?.addEventListener('submit', (event) => {
+        const errors = validateProfileDesignForm();
+        showProfileFormErrors(errors);
+
+        if (errors.length > 0) {
+            event.preventDefault();
+            profileFormErrors?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
 
     function setActiveIcon(choiceButton) {
         iconChoices.forEach((button) => button.classList.remove('is-active'));
@@ -1604,8 +1585,11 @@
         const selectedPlaceholder = choiceButton.dataset.placeholder || 'your-link-or-contact';
 
         linkTypeInput.value = selectedType;
+        valueInput.type = selectedType === 'email' ? 'email' : 'text';
         valueInput.placeholder = selectedPlaceholder;
     }
+
+    valueInput.type = linkTypeInput?.value === 'email' ? 'email' : 'text';
 
     iconChoices.forEach((button) => {
         button.addEventListener('click', () => setActiveIcon(button));
@@ -1740,21 +1724,38 @@
         updateAllPreviewElements((previewCard) => {
             const cover = previewCard.querySelector('#preview_cover');
             if (!cover) return;
-            const fallback = backgroundPatternInput.value === 'solid' ?
-                backgroundColorInput.value :
-                `linear-gradient(140deg, ${backgroundColorInput.value}, ${accentColorInput.value})`;
+            const backgroundColor = backgroundColorInput?.value || '#111827';
+            const pattern = backgroundPatternInput?.value || 'gradient';
+            const fallback = pattern === 'solid'
+                ? `linear-gradient(${backgroundColor}, ${backgroundColor})`
+                : pattern === 'dots'
+                    ? `radial-gradient(circle, rgba(255,255,255,.28) 1px, transparent 1.5px), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`
+                    : `linear-gradient(140deg, rgba(255,255,255,.2), rgba(0,0,0,.25)), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`;
             cover.style.backgroundImage = fallback;
-            cover.style.backgroundSize = 'cover';
+            cover.style.backgroundSize = pattern === 'dots' ? '14px 14px, cover' : 'cover';
             cover.style.backgroundPosition = 'center';
         });
         setAvatarPreviewMedia(coverImageUrl, asVideo);
     }
 
     function updatePreviewStyling() {
+        const backgroundColor = backgroundColorInput?.value || '#111827';
+        const textColor = textColorInput?.value || '#f9fafb';
+
         updateAllPreviewElements((previewCard) => {
             previewCard.classList.remove('layout-classic_card', 'layout-wave_split', 'layout-soft_fade',
                 'layout-hihello_card');
             previewCard.classList.add(`layout-${layoutStyleInput?.value || 'classic_card'}`);
+
+            previewCard.style.color = textColor;
+            previewCard.querySelectorAll('.preview-name, .preview-title, .preview-bio, .preview-link, .preview-link span').forEach((element) => {
+                element.style.color = textColor;
+            });
+            previewCard.querySelectorAll('.preview-link i').forEach((icon) => {
+                icon.style.backgroundColor = 'transparent';
+                icon.style.border = `2px solid ${backgroundColor}`;
+                icon.style.color = backgroundColor;
+            });
 
             if (cardStyleInput.value === 'bold') {
                 previewCard.style.boxShadow = '0 25px 60px rgba(0,0,0,0.42)';
@@ -1764,7 +1765,12 @@
             previewCard.style.borderRadius = cardStyleInput.value === 'clean' ? '8px' : '16px';
         });
 
-<<<<<<< HEAD
+        document.querySelectorAll('.color-picker-wrap').forEach((wrapper) => {
+            const input = wrapper.querySelector('input[type="color"]');
+            const label = wrapper.querySelector('.color-label');
+            if (input && label) label.textContent = input.value;
+        });
+
         const currentAvatar = avatarUrlInput?.value || '';
         updatePreviewBackground(currentAvatar, isVideoMedia(currentAvatar));
     }
@@ -1784,23 +1790,6 @@
             logo.alt = 'Profile logo preview';
         });
     }
-=======
-                const backgroundColor = backgroundColorInput?.value || '#111827';
-                const pattern = backgroundPatternInput?.value || 'gradient';
-                const fallback = pattern === 'solid'
-                    ? `linear-gradient(${backgroundColor}, ${backgroundColor})`
-                    : pattern === 'dots'
-                        ? `radial-gradient(circle, rgba(255,255,255,.28) 1px, transparent 1.5px), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`
-                        : `linear-gradient(140deg, rgba(255,255,255,.2), rgba(0,0,0,.25)), linear-gradient(140deg, ${backgroundColor}, ${backgroundColor})`;
-
-                cover.style.backgroundImage = fallback;
-                cover.style.backgroundSize = pattern === 'dots' ? '14px 14px, cover' : 'cover';
-                cover.style.backgroundPosition = 'center';
-            });
-            
-            setAvatarPreviewMedia(coverImageUrl, asVideo);
-        }
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
 
     function renderPreviewBadges(rawValue) {
         updateAllPreviewElements((previewCard) => {
@@ -1808,71 +1797,8 @@
             const badgesWrap = previewCard.querySelector('#preview_badges_wrap');
             if (!badges || !badgesWrap) return;
 
-<<<<<<< HEAD
             const badgeArray = (Array.isArray(rawValue) ? rawValue :
                     (typeof rawValue === 'string' ? rawValue : '')
-=======
-                if (cardStyleInput.value === 'bold') {
-                    previewCard.style.boxShadow = '0 25px 60px rgba(0,0,0,0.42)';
-                } else {
-                    previewCard.style.boxShadow = '0 12px 30px rgba(0,0,0,0.24)';
-                }
-
-                if (cardStyleInput.value === 'clean') {
-                    previewCard.style.borderRadius = '8px';
-                } else {
-                    previewCard.style.borderRadius = '16px';
-                }
-
-                const textColor = textColorInput?.value || '#f9fafb';
-                const backgroundColor = backgroundColorInput?.value || '#111827';
-                previewCard.style.color = textColor;
-                previewCard.querySelectorAll('.preview-name, .preview-title, .preview-bio, .preview-link, .preview-badges-title').forEach((element) => {
-                    element.style.color = textColor;
-                });
-                previewCard.querySelectorAll('.preview-link i').forEach((icon) => {
-                    icon.style.backgroundColor = 'transparent';
-                    icon.style.border = `2px solid ${backgroundColor}`;
-                    icon.style.color = backgroundColor;
-                });
-            });
-
-            const currentAvatar = avatarUrlInput?.value || '';
-            updatePreviewBackground(currentAvatar, isVideoMedia(currentAvatar));
-        }
-
-        function setPreviewLogo(nextUrl) {
-            updateAllPreviewElements((previewCard) => {
-                const logo = previewCard.querySelector('.preview-logo');
-                if (!logo) {
-                    return;
-                }
-
-                if (!nextUrl || nextUrl.trim() === '') {
-                    logo.src = emptyImage;
-                    logo.classList.add('placeholder');
-                    logo.alt = 'Profile logo placeholder';
-                    return;
-                }
-
-                logo.src = nextUrl;
-                logo.classList.remove('placeholder');
-                logo.alt = 'Profile logo preview';
-            });
-        }
-
-        function renderPreviewBadges(rawValue) {
-            updateAllPreviewElements((previewCard) => {
-                const badges = previewCard.querySelector('#preview_badges');
-                const badgesWrap = previewCard.querySelector('#preview_badges_wrap');
-                
-                if (!badges || !badgesWrap) {
-                    return;
-                }
-
-                const source = Array.isArray(rawValue) ? rawValue : (typeof rawValue === 'string' ? rawValue : '');
-                const badgeArray = (Array.isArray(source) ? source : source
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
                     .split(/\r?\n|,/)
                     .map((item) => item.trim())
                     .filter(Boolean))
@@ -1977,43 +1903,16 @@
         });
     });
 
-<<<<<<< HEAD
     bioInput?.addEventListener('input', () => {
         updateAllPreviewElements((previewCard) => {
             const el = previewCard.querySelector('#preview_bio');
             if (el) el.textContent = bioInput.value;
-=======
-        const initialBadgeImages = (() => {
-            try {
-                const raw = existingBadgeImagesInput?.value ?? '[]';
-                return JSON.parse(raw);
-            } catch (error) {
-                return [];
-            }
-        })();
-
-        renderBadgeAlbumPreview(initialBadgeImages.length ? initialBadgeImages : []);
-        renderPreviewBadges(initialBadgeImages.length ? initialBadgeImages : (badgeImagesInput?.value || ''));
-        renderImageAlbum(avatarPreviewAlbum, [avatarUrlInput?.value || ''].filter(Boolean));
-        renderImageAlbum(logoPreviewAlbum, [logoUrlInput?.value || ''].filter(Boolean));
-        setAvatarPreviewMedia(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
-
-        [backgroundColorInput, textColorInput, cardStyleInput, backgroundPatternInput, layoutStyleInput].forEach((input) => {
-            input?.addEventListener('input', updatePreviewStyling);
-            input?.addEventListener('change', updatePreviewStyling);
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
         });
     });
 
-<<<<<<< HEAD
     avatarUrlInput?.addEventListener('input', () => {
         updatePreviewBackground(avatarUrlInput.value.trim());
     });
-=======
-        setPreviewLogo(logoUrlInput?.value || '');
-        updatePreviewBackground(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
-        updatePreviewStyling();
->>>>>>> bf029cf07eb500cb4ce5ebd7b3d31a340742f123
 
     avatarImageInput?.addEventListener('change', () => {
         const file = avatarImageInput.files?.[0];
@@ -2072,7 +1971,7 @@
     renderImageAlbum(logoPreviewAlbum, [logoUrlInput?.value || ''].filter(Boolean));
     setAvatarPreviewMedia(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
 
-    [backgroundColorInput, textColorInput, accentColorInput, cardStyleInput, backgroundPatternInput, layoutStyleInput]
+    [backgroundColorInput, textColorInput, cardStyleInput, backgroundPatternInput, layoutStyleInput]
     .forEach((input) => {
         input?.addEventListener('input', updatePreviewStyling);
         input?.addEventListener('change', updatePreviewStyling);
@@ -2080,6 +1979,7 @@
 
     setPreviewLogo(logoUrlInput?.value || '');
     updatePreviewBackground(avatarUrlInput?.value || '', isVideoMedia(avatarUrlInput?.value || ''));
+    updatePreviewStyling();
 
     // ─── Tab switching ──────────────────────────────────────────────
     const tabButtons = document.querySelectorAll('.tab-button');

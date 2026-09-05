@@ -227,15 +227,7 @@
                     linear-gradient(140deg, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.25)),
                 @endif
                 linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.18)),
-                @if ($profile->avatar_url)
-                    @if ($isAvatarVideo)
-                        linear-gradient(140deg, {{ $profile->background_color }}, {{ $profile->background_color }});
-                    @else
-                        url('{{ $profile->avatar_url }}') calc(50% + {{ $avatarOffsetX }}px) calc(50% + {{ $avatarOffsetY }}px) / cover no-repeat;
-                    @endif
-                @else
-                    linear-gradient(140deg, {{ $profile->background_color }}, {{ $profile->background_color }});
-                @endif
+                linear-gradient(140deg, {{ $profile->background_color }}, {{ $profile->background_color }});
             @if ($backgroundPattern === 'dots')
                 background-size: 14px 14px, cover, cover;
             @else
@@ -252,6 +244,16 @@
             object-fit: cover;
             display: block;
             background: #0f172a;
+        }
+
+        .cover > img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: calc(50% + {{ $avatarOffsetX }}px) calc(50% + {{ $avatarOffsetY }}px);
+            display: block;
         }
 
         .cover::after {
@@ -570,6 +572,8 @@
                 <video autoplay muted loop playsinline>
                     <source src="{{ $profile->avatar_url }}">
                 </video>
+            @elseif ($profile->avatar_url)
+                <img src="{{ $profile->avatar_url }}" alt="{{ $displayName }} avatar">
             @endif
         </div>
 
